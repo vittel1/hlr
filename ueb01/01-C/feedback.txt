@@ -2,7 +2,7 @@ Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [ ] zu schwer
+Schwierigkeit:     [ ] zu leicht         [X] genau richtig     [ ] zu schwer
 Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
 Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
 
