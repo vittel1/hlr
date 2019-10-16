@@ -44,7 +44,6 @@ void show_map (void)
 				printf("...");
 				break;
 			}
-			//printf("i: %d j: %d " + i,j);
 		}
 		printf("\n");
 	}
