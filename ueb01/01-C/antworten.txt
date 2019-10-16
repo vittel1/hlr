@@ -1,0 +1,10 @@
+Frage 1:
+'CD' ist ein Buildin von Bash. Es ist nicht als eigenständig ausführbares
+Program anzusehen
+
+Frage 2:
+Das gepackte tar ist größer als der Ordner zuvor. Tar komprimiert nicht.
+Auch das tar.gz ist noch nicht kleiner als zuvor. 
+
+Frage 3:
+tar -czf archiv.tar.gz archiv
