@@ -52,7 +52,7 @@ void show_map (void) {
 				//Pos (0/2). N|E. 0001|0010 = 0011 = 3
 				case 3 : printf("NE  "); break;
 
-				//Pos: (2/2). S|E. 0010|1000 = 1010 = 10
+				//Pos: (2/2). S|E. 0010|1000 = 1010 = 6
 				case 6: printf("SE  "); break;
 
 				//Pos: (0/0): N|W: 0001|1000 = 1001 = 9
