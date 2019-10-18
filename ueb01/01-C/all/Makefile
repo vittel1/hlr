@@ -1,16 +1,13 @@
-files = pointer map
+all: pointer.x map.x
 
-all: $(files)
+%.x: %.o
+	gcc -o $@ $<
 
-% : %.o
-	gcc -o $* $*.o
 
-%.o : %.c
-	gcc -c $*.c
+%.o: %.c
+	gcc -c $<
+
 
 clean:
-	rm -f $(files)
-	rm -f *.o
-
-zip:
-	tar -czf ../ubueng1.tar.gz .
+	rm -f *~
+	rm -f map.x pointer.x
