@@ -1,0 +1,17 @@
+Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
+In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
+
+Bearbeitungszeit: 10 
+Schwierigkeit:     [ ] zu leicht         [X] genau richtig     [ ] zu schwer
+Lehrreich:         [ ] wenig             [ ] etwas             [X] sehr
+Verständlichkeit:  [ ] großteils unklar  [X] teilweise unklar  [ ] verständlich
+
+Kommentar:
+Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
+Ich habe den Zettel alleine bearbeitet, entsprechend fiel es nicht leicht in Aufgabe 2 warm zu werden mit C. 
+Was war zu schwer oder unverständlich?
+Siehe dritte Frage
+Was könnten wir verbessern?
+Ich wünsche mir immer möglichst missverständnislose Fragestellungen. Bei Frage 2 hat es mich aus irgendeinem Grund ziemlich verwirrt, dass da steht "Verwenden sie die switch-Konstruktion" - das klang für mich danach, als ob eine Switch-Konstruktion ausreiche, das hat ziemlich Zeit gekostet. 
+Was hat Ihnen besonders gut gefallen?
+Aufgabe 3 hat Spaß gebracht, warum auch immer. Ich mag es, wenn man im Vorwege der Aufgabe schon genau weiß, wie etwas auszusehen hat und wenn z.B. diverse Print-Befehle schon auf ein mögilcherweise fehlerhaftes Gesamtbild hinweisen. Gut gefallen hat mir auch, dass die Files gut kommentiert waren und dass man durch die TODOs genau wusste, was man zu editieren hat. 
