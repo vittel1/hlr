@@ -1,7 +1,0 @@
-Fragen:
-1.
-	2. which funktioniert nur mit Anwendungen, nicht aber mit in der Shell eingebauten Befehlen (wie z.B. cd). Hingegen funktioniert which vim z.B. einwandfrei, da vim eine auf der Festplatte ausführbare Anwendung ist, die auch einen Pfad besitzt.
-	3. 
-	1. Auffällig ist, dass die zufällig generierte Datei 256K und die tar-Archiv-Datei 260K groß ist. Bei einem Archiv hätte man vielleicht vermutet, dass die Archivdatei kleiner als die ursprüngliche Datei ausfällt. Der Ordner archiv weist eine überraschend kleine Grösse auf, wahrscheinlich werden die Unterordner und Files bei dem Befehl ls nicht mit in die Rechnung mit einbezogen.   
- 
-		2. Man kann ein tar.gz-Archiv mit dem Ausdruck tar -tf direkt packen.    
