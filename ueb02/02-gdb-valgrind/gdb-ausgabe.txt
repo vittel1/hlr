@@ -1,0 +1,57 @@
+(gdb) b 9
+Breakpoint 1 at 0x742: file simple.c, line 9.
+(gdb) r
+Starting program: /home/niclas/Downloads/02-gdb-valgrind/simple/simple
+
+Breakpoint 1, mistake1 () at simple.c:11
+11	{
+(gdb) print buf
+$1 = {9, 0, -136481184, 32767, -8776, 32767}
+(gdb) print buf[2]
+$2 = -136481184
+(gdb) n
+12	  int buf[] = { 1, 1, 2, 3, 4, 5 };
+(gdb)
+13	  return buf;
+(gdb) print buf
+$3 = {1, 1, 2, 3, 4, 5}
+(gdb) print buf[2]
+$4 = 2
+(gdb) ptype buf
+type = int [6]
+(gdb) b 17
+Breakpoint 2 at 0x55555555479e: file simple.c, line 17.
+(gdb) c
+Continuing.
+
+Breakpoint 2, mistake2 () at simple.c:19
+19	  int *buf = malloc (sizeof (char) * 4);
+(gdb) ptype buf
+type = int *
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00005555555547da in mistake3 () at simple.c:30
+30	  buf[0] = 3;
+(gdb) list
+25	mistake3 ()
+26	{
+27	  /* In dieser Funktion darf kein Speicher direkt allokiert werden. */
+28	  int mistake2_ = 0;
+29	  int *buf = (int *) &mistake2;
+30	  buf[0] = 3;
+31	  return buf;
+32	}
+33
+34	int *
+(gdb) bt
+#0  0x00005555555547da in mistake3 () at simple.c:30
+#1  0x0000555555554861 in main () at simple.c:47
+(gdb) f 1
+#1  0x0000555555554861 in main () at simple.c:47
+47	  int *p[4] = { &mistake1 ()[1], &mistake2 ()[1], mistake3 (), mistake4 () };
+(gdb) print p
+$5 = {0x4, 0x555555756264, 0x555555554900 <__libc_csu_init>, 0x555555554630 <_start>}
+(gdb) call mistake4
+$6 = {int *()} 0x5555555547e6 <mistake4>

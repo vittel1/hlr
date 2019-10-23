@@ -1,0 +1,14 @@
+Fehler in mistake1: Die Adresse einer lokalen Variable zurückzugeben, funktioniert nicht,
+weil Referenzen auf die Variable ungültig werden, sobald die Funktion verlassen wird.
+Stattdessen muss Speicher innerhalb der Funktion allokiert werden (mit malloc).
+Anschließend kann das Array gefüllt und zurückgegeben werden.
+
+Fehler in mistake2: buf (Zeile 20) wird nicht genügend Speicher zugewiesen,
+es wäre nur genug Speicher für einen einzelnen int. Stattdessen wird also mehr Speicher
+zugewiesen mit "malloc(sizeof(int) * 2)".
+
+Fehler in mistake3:
+
+Fehler in mistake4: In Zeile 41 wird mittels free der Speicher von buf wieder freigegeben,
+in der Zeile darauf wird allerdings noch auf buf zugegriffen, was zu undefiniertem Verhalten
+führt. Also wird das free dort entfernt und stattdessen am Ende der main-Funktion ausgeführt.

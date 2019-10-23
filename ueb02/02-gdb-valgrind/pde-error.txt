@@ -1,0 +1,14 @@
+In askparams.c wird in Zeile 197 auf den Index 333 von *argV zugegriffen.
+Dieser Index existiert nicht (das Array hat nur 7 Einträge). Der Index, auf den eigentlich
+zugegriffen werden soll, ist Index 3.
+
+In partdiff-seq.c wird in Zeile 104 kein Speicher zugewiesen, weshalb beim Initialisieren
+der Matrix (loop in initMatrices()) irgendwann ein Segmentation Fault auftritt.
+Die Zeile wird also ausgetauscht durch eine Allocation mittels calloc.
+
+In partdiff-seq.c wird in Zeile 230 auf Matrix[j - 1][m2][...] zugegriffen.
+Hier wurden m2 und j-1 vertauscht, der erste Index geht aber maximal bis 1,
+während j Werte bis 808 annimmt, weshalb es zu einem Segmentation Fault kommt.
+Um den Fehler zu beheben, vertauscht man die Indices also.
+
+Nun muss der Speicher wieder freigegeben werden. Dafür wird freeMatrices() erweitert (Zeile 165-177).

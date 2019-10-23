@@ -101,7 +101,8 @@ allocateMatrices (void)
 
   for (i = 0; i <= 1; i++)
     for (j = 0; j <= N; j++)
-      Matrix[i][j] = (double *) (M + (i * (N + 1) * (N + 1)) + (j * (N + 1)));
+      //Matrix[i][j] = (double *) (M + (i * (N + 1) * (N + 1)) + (j * (N + 1)));
+      Matrix[i][j] = calloc((N + 1), sizeof(double)); //Änderung
 }
 
 
@@ -162,11 +163,23 @@ initMatrices (void)
 void
 freeMatrices (void)
 {
-  free (Matrix);
+  int i,j;
+  for (i = 0; i <= 1; i++)
+  {
+    for (j = 0; j <= N; j++)
+    {
+      free(Matrix[i][j]);
+    }
+  }
+  free(Matrix[0]);
+  free(Matrix[1]);
+  free(Matrix);
+  free(M);
+  /*free (Matrix);
   if (Matrix[1] != 0)
     free (Matrix[1]);
   if (Matrix[0] != 0)
-    free (Matrix[0]);
+    free (Matrix[0]);*/
 }
 
 
@@ -227,7 +240,7 @@ calculate (void)
 	  for (i = 1; i < N; i++)	/* over all rows  */
 	    {
 	      star = -Matrix[m2][i - 1][j]
-		- Matrix[j - 1][m2][i] + 4 * Matrix[m2][i][j] -
+		- Matrix[m2][j - 1][i] + 4 * Matrix[m2][i][j] - /*Änderung*/
 		Matrix[m2][i][j + 1] - Matrix[m2][i + 1][j];
 
 	      residuum = getResiduum (i, j);
