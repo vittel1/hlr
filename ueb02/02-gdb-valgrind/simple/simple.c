@@ -17,7 +17,7 @@ mistake1 ()
 int *
 mistake2 ()
 {
-  int *buf = malloc (sizeof (int) * 2);
+  int *buf = malloc(sizeof (int) * 2);
   buf[1] = 2;
   return buf;
 }
@@ -26,9 +26,7 @@ int *
 mistake3 ()
 {
   /* In dieser Funktion darf kein Speicher direkt allokiert werden. */
-  //int mistake2_ = 0;
-  //int *buf = (int *) &mistake2;
-  int *buf = malloc(sizeof(int));
+  int *buf = (int *) mistake2();
   buf[0] = 3;
   return buf;
 }
@@ -53,10 +51,9 @@ main (void)
   printf ("3 %d\n", *p[2]);
   printf ("4 %d\n", *p[3]);
 
-  /* mhh muss hier noch etwas gefreed werden? */
-  /* Fügen sie hier die korrekten aufrufe von free() ein */
-  //free (p[1]);			/* welcher Pointer war das doch gleich?, TODO: Fixme... :-) */
   free(p[3]);
   free(p[2]);
+  free(--p[1]);
+  free(--p[0]);
   return 0;
 }

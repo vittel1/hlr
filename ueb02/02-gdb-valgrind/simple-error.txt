@@ -7,8 +7,21 @@ Fehler in mistake2: buf (Zeile 20) wird nicht genügend Speicher zugewiesen,
 es wäre nur genug Speicher für einen einzelnen int. Stattdessen wird also mehr Speicher
 zugewiesen mit "malloc(sizeof(int) * 2)".
 
-Fehler in mistake3:
+Fehler in mistake3: Es wurde keine gültige Adresse zurückgegeben, weshalb die Ausgabe
+am Ende nicht vernünftig funktioniert. Um den Vorgaben gerecht zu werden, wird erst
+mistake2 gerufen, dann modifiziert und ausgegeben.
 
-Fehler in mistake4: In Zeile 41 wird mittels free der Speicher von buf wieder freigegeben,
+Fehler in mistake4: In Zeile 39 wird mittels free der Speicher von buf wieder freigegeben,
 in der Zeile darauf wird allerdings noch auf buf zugegriffen, was zu undefiniertem Verhalten
 führt. Also wird das free dort entfernt und stattdessen am Ende der main-Funktion ausgeführt.
+
+Am Ende der main-Funktion wurde der Speicher nicht wieder freigegeben.
+Für die letzten beiden Einträge in p müssen lediglich die jeweiligen Pointer an
+free() übergeben werden, da diese eh auf den gesamten jeweils reservierten Speicher
+zeigen.
+Für die ersten beiden Einträge von p funktioniert das jedoch nicht, da diese einen Pointer
+auf den jeweils zweiten Eintrag in den reservierten Bereichen enthalten.
+Um diese Bereiche also komplett freigeben zu können, muss mittels Pointerarithmetik
+auf die Adresse des jeweiligen Anfangs der Bereiche verwiesen werden.
+Konkret müssen die Adressen, die jeweils in p[0] und p[1] liegen, mit "--p[x]"
+dekrementiert werden, um den gesamten Speicher wieder freizugeben.
