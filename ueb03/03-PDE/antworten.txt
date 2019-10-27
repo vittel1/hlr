@@ -1,0 +1,68 @@
+TODO: 9) und Teil von 11), ab 12) wird's schwammig
+Aufgabe 1: Batch Queuing
+
+1) Was bedeutet der Begriff Batch Queuing?
+Eine Batch Queue ist eine Datenstruktur, die von einem sogenannten "job scheduler" verwaltet wird.
+In diese Queue werden sogenannte Jobs gegeben, also Programme, die ausgeführt werden sollen.
+Bei diesen Programmen handelt es sich immer um solche, die für Batch processing geeignet sind,
+also keinerlei menschliche Interaktion erfordern, um ausgeführt zu werden. Der Scheduler 
+ordnet die Jobs dann nach gewissen Kriterien und führt sie der Reihe nach aus.
+
+2) Welche Aufgaben hat ein Batch-Queuing-System?
+- automatisches Ausführen von Programmen
+- Anbieten eines Prioritätssystem o.Ä. um Jobs zu ordnen
+- Anbieten eines Interfaces, um die Ausführung der Jobs zu überwachen
+- Anbieten eines Interfaces, mit dem Workflows oder Abhängigkeiten zwischen den einzelnen
+  Programmen definiert werden können
+
+3) Nennen Sie drei Beispiele für Batch-Queuing-Systeme
+- Portable Batch System
+- Slurm Workload Manager
+- Platform Load Sharing Facility
+
+4) Welches Batch-Queuing-System wird auf dem Cluster verwendet?
+Slurm
+
+5) Funktionsweise von sbatch
+sbatch übergibt ein batch script an Slurm. Dem Skript wird dann eine Job ID von Slurm zugewiesen.
+Sobald dann die von dem batch script benötigten Ressourcen frei sind, wird es ausgeführt.
+
+6) Wie lassen sich die aktuellen Jobs und deren Status anzeigen?
+squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST") 
+
+7) Vorteile von sview
+sview kann nicht nur die Jobs anzeigen, sondern auch den Zustand von Slurm modifizieren.
+Außerdem bietet es eine GUI an (hat bei mir allerdings nicht funktioniert).
+
+8) Gibt es eine Möglichkeit, einen bereits abgeschickten Job zu löschen?
+Ja, und zwar mit dem Kommando "scancel". An dieses Kommando muss dann die Job ID übergeben werden,
+um einen bestimmten Job zu löschen. Es können auch alle Jobs eines bestimmten Users 
+gelöscht werden, wenn man das Flag -u und den Usernamen übergibt.
+
+9) Können auf dem Cluster mehrere Nutzer oder Jobs gleichzeitig denselben Knoten benutzen?
+
+
+10) Wie kann man den detaillierten Status eines Jobs ausgeben lassen?
+Wenn man per -j die Job ID an squeue übergibt, kann man sich den Status eines einzelnen Jobs
+ausgeben lassen. Zusätzliche Information kann über das Flag -l angefordert werden.
+
+11) Welche Scheduling-Verfahren sind bei dem auf dem Cluster benutzten System möglich?
+Es gibt 2 Optionen: sched/backfill und sched/builtin.
+Bei sched/backfill wird backfill scheduling betrieben. Hierbei werden Jobs mit niedrigerer Priorität
+ausgeführt, wenn die Startzeit von höher priorisierten Jobs nicht verzögert wird.
+Bei der sched/builtin Option werden die Jobs strikt nach ihrer Priorität ausgeführt.
+
+12) Allokieren eines einzelnen Knotens
+
+
+13) Wie hoch ist das Timeout auf dem Cluster, bis alle Knoten wieder freigegeben werden?
+
+
+14) Wie können Sie die Priorität Ihrer Jobs nachschauen? Können Sie diese verändern/beeinflussen?
+Das squeue Kommando bietet Flags an, um die Priorität auszugeben. Ändern kann man die Priorität
+über scontrol, aber das sollte nur einer Person mit Root-Rechten möglich sein.
+
+15) Welche unterschiedlichen Partitionen sind eingerichtet? Wie kann die zu benutzende Partition geändert werden?
+Ein Aufruf von sinfo zeigt folgende Partitionen: abu, amd, magny, nehalem, west.
+Wenn eine andere Partition genutzt werden soll, kann man die zu nutzende Partition beim Ausführen
+von srun oder salloc spezifizieren.
