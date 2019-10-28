@@ -1,0 +1,71 @@
+Die ersten Optimierungen kann man bereits vornehmen, ohne den Code zu verändern,
+und zwar mit Hilfe von Compiler-Optimierungen durch O1, O2 und O3.
+Die gemessenen Zeiten mit den unterschiedlichen Compiler-Optimierungen schauen
+folgendermaßen aus (gemessen mit time-Kommando):
+
+nichts geändert:
+	./partdiff-seq 1 2 64 1 2 10240: real 1m41,603s
+
+	./partdiff-seq 1 2 64 2 2 5120: real 2m9,432s
+
+O1:
+	./partdiff-seq 1 2 64 1 2 10240: real 0m42,081s
+
+	./partdiff-seq 1 2 64 2 2 5120: real 1m12,554s
+
+O2:
+	./partdiff-seq 1 2 64 1 2 10240: real 0m18,955s
+
+	./partdiff-seq 1 2 64 2 2 5120: real 1m10,612
+
+O3:
+	./partdiff-seq 1 2 64 1 2 10240: real 0m20,116s
+
+	./partdiff-seq 1 2 64 2 2 5120: real 1m10,937s
+
+Die Optimierungsstufe O2 erzielt ohne weitere Änderungen das beste Ergebnis.
+
+Als nächstes wurde ein Profiling des Programms mit gprof durchgeführt.
+Hierfür wurde das Flag -pg zu den genutzten Flags hinzugefügt und anschließend
+wurde das Programm ausgeführt und das entstandenen Profile betrachtet.
+Die zeitintensivste Funktion ist calculate() mit folgenden Werten:
+
+%   cumulative   self              self     total
+time   seconds   seconds    calls   s/call   s/call  name
+90.62     84.57    84.57        1    84.57    92.80  calculate
+
+Für die Optimierung sollte also die calculate-Funktion als erstes angepasst werden.
+
+Als nächstes wurde das Programm mit perf analysiert. Es enstand folgender Output:
+Performance counter stats for './partdiff-seq 1 2 64 1 2 10240':
+
+    102241,536350      task-clock (msec)         #    1,000 CPUs utilized
+              243      context-switches          #    0,002 K/sec
+                1      cpu-migrations            #    0,000 K/sec
+            1.131      page-faults               #    0,011 K/sec
+  203.954.872.516      cycles                    #    1,995 GHz
+  482.878.826.919      instructions              #    2,37  insn per cycle
+   22.096.810.918      branches                  #  216,124 M/sec
+        7.201.799      branch-misses             #    0,03% of all branches
+
+    102,252674552 seconds time elapsed
+Die task-clock misst die Zeit, die die Ausführung des Programms dauerte und wie
+viele der CPUs genutzt wurden. Da das Programm nicht parallelisiert wurde/wird,
+bleibt dieser Wert bei 1 und hat erstmal keine weitere Bedeutung für diese Aufgabe
+(selbiges gilt für cpu-migrations).
+Die nächste Zeile zählt die context switches, je niedriger, desto besser.
+Die Anzahl der page-faults sollte auch möglichst niedrig gehalten werden,
+darauf haben wir allerdings keinen großen Einfluss.
+Die Anzahl der cycles zu verringern, würde selbstverständlich auch die Laufzeit
+verringern.
+Bei den Instructions ist es wichtig, einen möglichst hohen Wert bei Instructions
+per cycle zu erzielen. Möglich sind Werte zwischen 3 und 5, es wäre also durchaus
+eine Verbesserung in der Laufzeit zu erzielen, wenn man den Code dementsprechend
+anpasst.
+Als nächstes werden die branches und vor allem die branch-misses gezählt.
+An sich ist eine hohe Anzahl an branches nicht schädlich für die Performance des
+Programms (es existiert schließlich branch prediction), dafür sind die branch-
+misses umso schlimmer. Diese gilt es also ebenfalls zu minimieren.
+
+
+Nun zur eigentlichen Optimierung des Programm-Codes.
