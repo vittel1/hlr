@@ -5,7 +5,7 @@ Aufgabe 1: Batch Queuing
 Eine Batch Queue ist eine Datenstruktur, die von einem sogenannten "job scheduler" verwaltet wird.
 In diese Queue werden sogenannte Jobs gegeben, also Programme, die ausgeführt werden sollen.
 Bei diesen Programmen handelt es sich immer um solche, die für Batch processing geeignet sind,
-also keinerlei menschliche Interaktion erfordern, um ausgeführt zu werden. Der Scheduler 
+also keinerlei menschliche Interaktion erfordern, um ausgeführt zu werden. Der Scheduler
 ordnet die Jobs dann nach gewissen Kriterien und führt sie der Reihe nach aus.
 
 2) Welche Aufgaben hat ein Batch-Queuing-System?
@@ -28,7 +28,7 @@ sbatch übergibt ein batch script an Slurm. Dem Skript wird dann eine Job ID von
 Sobald dann die von dem batch script benötigten Ressourcen frei sind, wird es ausgeführt.
 
 6) Wie lassen sich die aktuellen Jobs und deren Status anzeigen?
-squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST") 
+squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST")
 
 7) Vorteile von sview
 sview kann nicht nur die Jobs anzeigen, sondern auch den Zustand von Slurm modifizieren.
@@ -36,7 +36,7 @@ Außerdem bietet es eine GUI an (hat bei mir allerdings nicht funktioniert).
 
 8) Gibt es eine Möglichkeit, einen bereits abgeschickten Job zu löschen?
 Ja, und zwar mit dem Kommando "scancel". An dieses Kommando muss dann die Job ID übergeben werden,
-um einen bestimmten Job zu löschen. Es können auch alle Jobs eines bestimmten Users 
+um einen bestimmten Job zu löschen. Es können auch alle Jobs eines bestimmten Users
 gelöscht werden, wenn man das Flag -u und den Usernamen übergibt.
 
 9) Können auf dem Cluster mehrere Nutzer oder Jobs gleichzeitig denselben Knoten benutzen?
@@ -56,7 +56,7 @@ Bei der sched/builtin Option werden die Jobs strikt nach ihrer Priorität ausgef
 
 
 13) Wie hoch ist das Timeout auf dem Cluster, bis alle Knoten wieder freigegeben werden?
-
+6 Stunden
 
 14) Wie können Sie die Priorität Ihrer Jobs nachschauen? Können Sie diese verändern/beeinflussen?
 Das squeue Kommando bietet Flags an, um die Priorität auszugeben. Ändern kann man die Priorität
@@ -64,5 +64,26 @@ Das squeue Kommando bietet Flags an, um die Priorität auszugeben. Ändern kann 
 
 15) Welche unterschiedlichen Partitionen sind eingerichtet? Wie kann die zu benutzende Partition geändert werden?
 Ein Aufruf von sinfo zeigt folgende Partitionen: abu, amd, magny, nehalem, west.
-Wenn eine andere Partition genutzt werden soll, kann man die zu nutzende Partition beim Ausführen
-von srun oder salloc spezifizieren.
+Wenn eine andere Partition genutzt werden soll, kann man die zu nutzende Partition z.B im Job-Script spezifizieren.
+
+
+Aufgabe 2: Paralleles Starten eines Shell-Scripts
+Die Reihenfolge der Hostnamen und Zeiten ist bei beiden durcheinander, aber in jeweils
+unterschiedlichen Anordnungen. Das Durcheinander von Hostnamen und Zeiten
+liegt daran, dass die 16 Prozesse alle gleichzeitig ausgeführt werden, weshalb
+sie auch alle gleichzeitig in timescript.out schreiben.
+Dass auch diese Anordnungen wieder unterschiedlich sind, liegt wiederum daran,
+dass die exakten Zeitpunkte/Reihenfolge der Ausführungen variieren, sprich
+in einem Fall wird Prozess 1 kurz vor Prozess 2 gestartet, bei der nächsten
+Ausführung ändert sich die Reihenfolge aber durch Zufall, sodass Prozess 2
+nun leicht vor Prozess 1 startet.
+Ebenfalls sind die Hostnamen manchmal unterschiedlich, was daran liegt,
+dass die Prozesse mal auf z.B west 1-4 und mal auf west 5-8 ausgeführt werden.
+
+timescript.out innerhalb von timescript zu erzeugen, ist nicht möglich, weil
+dann 16 Prozesse jeweils eine Datei namens timescript.out erzeugen würden.
+Beim Ausprobieren ist aufgefallen, dass die resultierende Ausgabe sehr
+unterschiedlich in sowohl Länge als auch Inhalt ausfällt, weshalb zwar davon
+auszugehen ist, dass alle resultierenden timescript.out-Files am Ende
+irgendwie zusammengefügt werden, aber in keiner vorhersehbaren oder nachvollziehbaren
+Art und Weise.

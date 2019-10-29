@@ -1,0 +1,21 @@
+#!/bin/bash -l
+
+#SBATCH --job-name=guterName
+
+#SBATCH -N 4
+
+#SBATCH -n 16
+
+#SBATCH --ntasks-per-node=4
+
+#SBATCH --partition west
+
+#SBATCH --output=timescript.out
+
+#SBATCH --array=1-16
+
+srun ./timescript
+
+echo "fertig" > job_script.out
+
+exit 0
