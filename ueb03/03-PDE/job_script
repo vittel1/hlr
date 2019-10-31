@@ -1,21 +1,12 @@
-#!/bin/bash -l
+#!/bin/bash
 
-#SBATCH --job-name=guterName
-
-#SBATCH -N 4
-
-#SBATCH -n 16
-
+#SBATCH --job-name=Output
+#SBATCH --partition=west
+#SBATCH --account=papenfuss
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=4
-
-#SBATCH --partition west
-
 #SBATCH --output=timescript.out
-
-#SBATCH --array=1-16
 
 srun ./timescript
 
 echo "fertig" > job_script.out
-
-exit 0
