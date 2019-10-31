@@ -69,3 +69,24 @@ misses umso schlimmer. Diese gilt es also ebenfalls zu minimieren.
 
 
 Nun zur eigentlichen Optimierung des Programm-Codes.
+
+Die erste Änderung wurde in der while-Schleife der calculate-Funktion vorgenommen.
+Hier wurden Berechnungen für den Stern, Korrektur und Residuum angestellt.
+Dafür wurde in 2 for-Schleifen über die dreidimensionale Matrix iteriert.
+Wenn man hier nun die Reihenfolge von i und j tauscht, sprich es wird außen
+über j iteriert und innen über i, kann man eine erhebliche Leistungssteigerung
+erzielen. Der Grund dafür ist, dass in C für das Speichern von mehrdimensionalen
+Arrays die row-major-order gilt, was bedeutet, dass die aufeinanderfolgenden Elemente
+einer Reihe des Arrays auch im Speicher aufeinanderfolgen.
+Als Programmierer muss man also dafür sorgen, dass beim Iterieren über mehrdimensionale
+Arrays die innerste Schleife immer zu dem Index gehört, der am weitesten rechts
+steht (Bsp: m[i]]j, j ist der äußerste Index, also muss die innerste for-Schleife über j iterieren).
+
+Nach den Änderungen konnten für die Optimierungsstufe O2 folgende Zeiten gemessen werden:
+
+./partdiff-seq 1 2 64 1 2 10240: real	0m9,830s
+
+./partdiff-seq 1 2 64 2 2 5120: real	1m9,232s
+
+Für die oberen Parameter haben wir die benötigte Zeit also halbiert, während für
+die unteren Parameter immerhin eine Sekunde gewonnen wurde.
