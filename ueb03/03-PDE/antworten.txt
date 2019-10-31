@@ -62,8 +62,8 @@ auszuführenden Programm/Kommando mit srun übergeben werden ("srun hostname").
 6 Stunden
 
 14) Wie können Sie die Priorität Ihrer Jobs nachschauen? Können Sie diese verändern/beeinflussen?
-Das squeue Kommando bietet Flags an, um die Priorität auszugeben. Ändern kann man die Priorität
-über scontrol, aber das sollte nur einer Person mit Root-Rechten möglich sein.
+Das squeue Kommando bietet Flags an, um die Priorität auszugeben, z.B. squeue -O priority,nodelist. 
+Ändern kann man die Priorität über scontrol, aber das sollte nur einer Person mit Root-Rechten möglich sein.
 
 15) Welche unterschiedlichen Partitionen sind eingerichtet? Wie kann die zu benutzende Partition geändert werden?
 Ein Aufruf von sinfo zeigt folgende Partitionen: abu, amd, magny, nehalem, west.
