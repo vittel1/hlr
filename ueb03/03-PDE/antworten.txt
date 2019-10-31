@@ -28,7 +28,7 @@ sbatch übergibt ein batch script an Slurm. Dem Skript wird dann eine Job ID von
 Sobald dann die von dem batch script benötigten Ressourcen frei sind, wird es ausgeführt.
 
 6) Wie lassen sich die aktuellen Jobs und deren Status anzeigen?
-squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST")
+squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST(REASON)")
 
 7) Vorteile von sview
 sview kann nicht nur die Jobs anzeigen, sondern auch den Zustand von Slurm modifizieren.
@@ -53,7 +53,10 @@ ausgeführt, wenn die Startzeit von höher priorisierten Jobs nicht verzögert w
 Bei der sched/builtin Option werden die Jobs strikt nach ihrer Priorität ausgeführt.
 
 12) Allokieren eines einzelnen Knotens
-
+Um eine Verbindung zu einem bestimmten Knoten aufzubauen, muss mit salloc genutzt werden,
+"salloc --partition west -w west10" stellt z.B eine Verbindung zu west10 her, wenn
+der Knoten verfügbar ist. Um dann etwas auf dem Knoten auszuführen, muss das
+auszuführenden Programm/Kommando mit srun übergeben werden ("srun hostname").
 
 13) Wie hoch ist das Timeout auf dem Cluster, bis alle Knoten wieder freigegeben werden?
 6 Stunden
@@ -64,7 +67,8 @@ Das squeue Kommando bietet Flags an, um die Priorität auszugeben. Ändern kann 
 
 15) Welche unterschiedlichen Partitionen sind eingerichtet? Wie kann die zu benutzende Partition geändert werden?
 Ein Aufruf von sinfo zeigt folgende Partitionen: abu, amd, magny, nehalem, west.
-Wenn eine andere Partition genutzt werden soll, kann man die zu nutzende Partition z.B im Job-Script spezifizieren.
+Wenn eine andere Partition genutzt werden soll, kann man die zu nutzende Partition z.B im Job-Script spezifizieren
+oder bei salloc eine andere Partition angeben("--partition <partition>").
 
 
 Aufgabe 2: Paralleles Starten eines Shell-Scripts
