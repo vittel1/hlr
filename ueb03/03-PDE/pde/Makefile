@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags, paths and libraries
-CFLAGS = -std=c11 -pedantic -Wall -Wextra
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -O2
 LFLAGS = $(CFLAGS)
 LIBS   = -lm
 
@@ -20,6 +20,8 @@ partdiff-seq: $(OBJS) Makefile
 
 clean:
 	$(RM) *.o *~
+	rm partdiff-seq
+	rm function.data
 
 partdiff-seq.o: partdiff-seq.c Makefile
 
