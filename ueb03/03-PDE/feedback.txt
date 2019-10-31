@@ -3,7 +3,7 @@ In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
 Schwierigkeit:     [X] zu leicht         [ ] genau richtig     [ ] zu schwer
-Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
+Lehrreich:         [X] wenig             [ ] etwas             [ ] sehr
 Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
 
 Kommentar:
