@@ -75,17 +75,17 @@ oder bei salloc eine andere Partition angeben("--partition <partition>").
 
 
 Aufgabe 2: Paralleles Starten eines Shell-Scripts
-Die Reihenfolge der Hostnamen und Zeiten ist bei beiden durcheinander, aber in jeweils
-unterschiedlichen Anordnungen. Das Durcheinander von Hostnamen und Zeiten
-liegt daran, dass die 16 Prozesse alle gleichzeitig ausgeführt werden, weshalb
-sie auch alle gleichzeitig in timescript.out schreiben.
-Dass auch diese Anordnungen wieder unterschiedlich sind, liegt wiederum daran,
-dass die exakten Zeitpunkte/Reihenfolge der Ausführungen variieren, sprich
-in einem Fall wird Prozess 1 kurz vor Prozess 2 gestartet, bei der nächsten
-Ausführung ändert sich die Reihenfolge aber durch Zufall, sodass Prozess 2
-nun leicht vor Prozess 1 startet.
-Ebenfalls sind die Hostnamen manchmal unterschiedlich, was daran liegt,
-dass die Prozesse mal auf z.B west 1-4 und mal auf west 5-8 ausgeführt werden.
+Es fällt auf, dass die Abfolge weder Zeitlich sortiert noch nach Knoten geordnet ist,
+ebenfalls gibt es kleine Abweichungen in den Startzeiten auf einem Knoten/Prozessor
+und manchmal wird das Skript auf unterschiedlichen Knoten ausgeführt.
+Dieses verhalten entsteht durch mehrere Faktoren, zum einen ist die Ausgabe so willkürlich,
+weil die Prozesse alle in etwa zur gleichen Zeit ausgeführt werden, dementsprechend
+versuchen sie auch alle gleichzeitig in die Ausgabe-Datei zuschreiben, es entsteht also
+ein Durcheinander. Die minimalen Abweichnungen in den Ausführungszeiten entstehen
+vermutlich durch Traffic oder durch die nötige Zuordnung zu einem freien Core.
+Die Varianz in den Hostnamen hängt von der Auslastung des Knotes ab, 
+so kann es z.B. manchmal vorkommen das ein Knoten gerade mit anderen Tasks belegt ist
+und wir deshalb auf einem komplett anderen Knoten landen als im Durchlauf davor.
 
 timescript.out innerhalb von timescript zu erzeugen, ist nicht möglich, weil
 dann 16 Prozesse jeweils eine Datei namens timescript.out erzeugen würden.
