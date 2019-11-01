@@ -21,7 +21,7 @@ ordnet die Jobs dann nach gewissen Kriterien und führt sie der Reihe nach aus.
 - Platform Load Sharing Facility
 
 4) Welches Batch-Queuing-System wird auf dem Cluster verwendet?
-Slurm
+Simple Linux Utility for Resource Management (Slurm)
 
 5) Funktionsweise von sbatch
 sbatch übergibt ein batch script an Slurm. Dem Skript wird dann eine Job ID von Slurm zugewiesen.
@@ -40,7 +40,10 @@ um einen bestimmten Job zu löschen. Es können auch alle Jobs eines bestimmten 
 gelöscht werden, wenn man das Flag -u und den Usernamen übergibt.
 
 9) Können auf dem Cluster mehrere Nutzer oder Jobs gleichzeitig denselben Knoten benutzen?
-
+Ja und Nein, es hängt von der Konfiguration des Knotes bzw. der Partition ab. So gibt es z.B. 
+Partitionen im Rechenzentrum die geteilte Ressourcen erlauben oder die exklusiv für einen Job allokiert werden.
+(https://www.dkrz.de/up/systems/mistral/running-jobs/partitions-and-limits 
+https://slurm.schedmd.com/cpu_management.html)
 
 10) Wie kann man den detaillierten Status eines Jobs ausgeben lassen?
 Wenn man per -j die Job ID an squeue übergibt, kann man sich den Status eines einzelnen Jobs
