@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=Output
 #SBATCH --partition=west
-#SBATCH --account=papenfuss
+#SBATCH --account=x
 #SBATCH --nodes=4
 #SBATCH --ntasks-per-node=4
 #SBATCH --output=timescript.out
