@@ -11,7 +11,7 @@ Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen? 3.4 zu den
 mathematischen Optimierungen
 Was war zu schwer oder unverständlich? Der Anhang für den mathematischen
 Hintergrund ist unverständlich für Informatiker, die "nur" grundlegendes
-Mathe Verständnis haben. Die Fragestellung 3.4 zu der Optimierung der
+Mathe-Verständnis haben. Die Fragestellung 3.4 zu der Optimierung der
 mathematischen Berechnungen hätte vielleicht noch ein Hinweis geholfen, so
 ist es ein wenig schwer zu finden. 
 Was könnten wir verbessern?

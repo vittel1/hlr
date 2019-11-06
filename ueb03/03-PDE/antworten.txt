@@ -1,4 +1,3 @@
-TODO: 9) und Teil von 11), ab 12) wird's schwammig
 Aufgabe 1: Batch Queuing
 
 1) Was bedeutet der Begriff Batch Queuing?
@@ -31,8 +30,9 @@ Sobald dann die von dem batch script benötigten Ressourcen frei sind, wird es a
 squeue (gibt Tabelle in Form "JOBID | PARTITION | NAME | USER | ST | TIME | NODES | NODELIST(REASON)")
 
 7) Vorteile von sview
-sview kann nicht nur die Jobs anzeigen, sondern auch den Zustand von Slurm modifizieren.
-Außerdem bietet es eine GUI an (hat bei mir allerdings nicht funktioniert).
+sview kann nicht nur die Jobs anzeigen, sondern auch den Zustand von Slurm modifizieren
+und noch viele andere Informationen anzeigen (Status einzelner Nodes, CPUs per Node etc).
+Außerdem bietet es eine GUI an.
 
 8) Gibt es eine Möglichkeit, einen bereits abgeschickten Job zu löschen?
 Ja, und zwar mit dem Kommando "scancel". An dieses Kommando muss dann die Job ID übergeben werden,
@@ -75,16 +75,16 @@ oder bei salloc eine andere Partition angeben("--partition <partition>").
 
 
 Aufgabe 2: Paralleles Starten eines Shell-Scripts
-Es fällt auf, dass die Abfolge weder Zeitlich sortiert noch nach Knoten geordnet ist,
-ebenfalls gibt es kleine Abweichungen in den Startzeiten auf einem Knoten/Prozessor
+Es fällt auf, dass die Abfolge weder zeitlich sortiert noch nach Knoten geordnet ist.
+Ebenfalls gibt es kleine Abweichungen in den Startzeiten auf einem Knoten/Prozessor
 und manchmal wird das Skript auf unterschiedlichen Knoten ausgeführt.
-Dieses verhalten entsteht durch mehrere Faktoren, zum einen ist die Ausgabe so willkürlich,
+Dieses Verhalten entsteht durch mehrere Faktoren. Zum einen ist die Ausgabe so willkürlich,
 weil die Prozesse alle in etwa zur gleichen Zeit ausgeführt werden, dementsprechend
 versuchen sie auch alle gleichzeitig in die Ausgabe-Datei zuschreiben, es entsteht also
 ein Durcheinander. Die minimalen Abweichnungen in den Ausführungszeiten entstehen
 vermutlich durch Traffic oder durch die nötige Zuordnung zu einem freien Core.
-Die Varianz in den Hostnamen hängt von der Auslastung des Knotes ab, 
-so kann es z.B. manchmal vorkommen das ein Knoten gerade mit anderen Tasks belegt ist
+Die Varianz in den Hostnamen hängt von der Auslastung der Knoten ab, 
+so kann es z.B. manchmal vorkommen, dass ein Knoten gerade mit anderen Tasks belegt ist
 und wir deshalb auf einem komplett anderen Knoten landen als im Durchlauf davor.
 
 timescript.out innerhalb von timescript zu erzeugen, ist nicht möglich, weil

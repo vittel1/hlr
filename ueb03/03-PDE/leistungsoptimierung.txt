@@ -90,3 +90,10 @@ Nach den Änderungen konnten für die Optimierungsstufe O2 folgende Zeiten gemes
 
 Für die oberen Parameter haben wir die benötigte Zeit also halbiert, während für
 die unteren Parameter immerhin eine Sekunde gewonnen wurde.
+
+Als nächstes wurden die Zuweisungen um die Korrekturwerte und das Residuum in
+calculate angepasst. Der Wert der Variable korrektur wird jetzt direkt durch die
+Funktion getResiduum berechnet. Der Wert der Variable residuum, die den
+normalisierten Residuumswert hält, wird direkt danach, abhängig von korrektur, zugewiesen.
+
+Die Verbesserungen hier sind allerdings minimal (weniger als eine Sekunde).
