@@ -225,7 +225,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		maxresiduum = 0;
 
 		/* over all rows */
-		#pragma omp parallel for
+		#pragma omp parallel for private(j, star, residuum) reduction(max: maxresiduum)
 		for (i = 1; i < N; i++)
 		{
 			double fpisin_i = 0.0;
@@ -332,6 +332,7 @@ displayStatistics (struct calculation_arguments const* arguments, struct calcula
 	printf("\n");
 	printf("Anzahl Iterationen: %" PRIu64 "\n", results->stat_iteration);
 	printf("Norm des Fehlers:   %e\n", results->stat_precision);
+	printf("Anzahl Threads: %ld \n", options->number);
 	printf("\n");
 }
 
