@@ -1,0 +1,25 @@
+Messung 1:
+Bei der ersten Messungsreihe sollte die Laufzeit bei unterschiedlicher Anzahl Threads untersucht werden. Hierfür wurden Messungen mit folgenden Parametern vorgenommen:
+x 2 512 2 2 1000, wobei x die Anzahl der Threads ist. Aus den Messungen ist folgendes Diagramm entstanden.
+
+
+
+Zusätzlich zu der Visualisierung der Messergebnisse (in rot) ist eine Ideallinie (in grau)
+eingetragen, die den optimalen Speedup darstellt. Der Graph des reellen Speedups ist nahezu linear, verläuft jedoch leicht unter der Ideallinie.
+Bei einer geringen Threadzahl verlaufen die beiden Graphen fast identisch, jedoch bleibt der reelle Speedup bei steigender Threadzahl immer weiter hinter dem Optimum zurück.
+Dies könnte mehrere Gründe haben. Zum einen benötigt das Betriebssystem ebenfalls Ressourcen,
+weshalb unser Programm nicht durchgängig alle benötigten Prozessorkerne nutzen kann.
+
+
+
+
+Messung 2:
+Bei der zweiten Messungsreihe sollte die Laufzeit in Abhängigkeit von der Anzahl der Interlines betrachet werden. Hierfür wurden Messungen mit folgenden Parametern vorgenommen:
+12 2 y 2 2 15000, wobei y = 2^i für 0<=i<=10 galt. Aus den Messungen ist folgendes Diagramm entstanden.
+
+
+
+
+Bei geringer Anzahl Interlines (1 bis 64) ist kaum eine Steigerung in der Laufzeit wahrzunehmen, sie verhält sich nahezu linear. Erst ab 64 ist erstmals eine wirkliche Steigerung zu sehen, welche zunehmend extremer wird. Das Wachstumsverhalten ist also nicht linear, sondern eher exponentiell.
+Also beeinflusst die Anzahl der Interlines die Laufzeit exponentiell, was durchaus Sinn ergibt, wenn man einen Blick auf die Beziehung zwischen Matrixgröße und Anzahl der Interlines wirft.
+Die Anzahl der Zeilen in der Matrix wird folgendermaßen berechnet: n*8 + 9, wobei n die Anzahl der Interlines ist. Da die Matrizen quadratisch sind, geht die Anzahl der Interlines also quadratisch in die Größe der Matrizen ein.
