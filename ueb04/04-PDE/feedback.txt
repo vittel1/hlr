@@ -1,13 +1,18 @@
-Die Bearbeitungszeit bitte in ganzen Stunden angeben (aufrunden).
+Die Bearbeitungszeit bitte in ganzen Stunden angeben (10h).
 In den restlichen Zeilen jeweils ein X in der zutreffenden Spalte setzen.
 
 Bearbeitungszeit:  
-Schwierigkeit:     [ ] zu leicht         [ ] genau richtig     [ ] zu schwer
-Lehrreich:         [ ] wenig             [ ] etwas             [ ] sehr
-Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [ ] verständlich
+Schwierigkeit:     [ ] zu leicht         [x] genau richtig     [ ] zu schwer
+Lehrreich:         [ ] wenig             [x] etwas             [ ] sehr
+Verständlichkeit:  [ ] großteils unklar  [ ] teilweise unklar  [x] verständlich
 
 Kommentar:
-Zeitaufwand zu groß? Wo sind Sie nicht weiter gekommen?
+Zeitaufwand zu groß? 
+Wo sind Sie nicht weiter gekommen?
 Was war zu schwer oder unverständlich?
 Was könnten wir verbessern?
 Was hat Ihnen besonders gut gefallen?
+Der Zeitaufwand fällt leider sehr groß aus, wenn man sich ein wenig doof anstellt bei den Messungen (z.B. Anfangs mit vielen Interlines und Iterations arbeiten (ohne Optimierung)).
+    -> hier wäre vielleicht ein kleiner Tipp angebracht gewesen, dass das Programm sehr verlangsamt wurde und man lieber mit kleinen Werten für das sequenzielle Programm arbeiten soll.
+Es hat leider ein wenig gestört, dass teilsweise alle Knoten belegt waren und man zwangsweise Warten musste, wenn man keinen Job aussteuern wollte.
+Interessant war der Teil mit der Parallilisierung, es hat zwar ein wenig gedauert auf eine geeignete Lösung zu kommen (so das die Matrix & Genauigkeit stimmen) aber war doch sehr lehrreich.
