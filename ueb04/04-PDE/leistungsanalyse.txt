@@ -9,7 +9,8 @@ eingetragen, die den optimalen Speedup darstellt. Der Graph des reellen Speedups
 Bei einer geringen Threadzahl verlaufen die beiden Graphen fast identisch, jedoch bleibt der reelle Speedup bei steigender Threadzahl immer weiter hinter dem Optimum zurück.
 Dies könnte mehrere Gründe haben. Zum einen benötigt das Betriebssystem ebenfalls Ressourcen,
 weshalb unser Programm nicht durchgängig alle benötigten Prozessorkerne nutzen kann.
-
+Des Weiteren vermuten wir, dass die reduction der Variable "maxresiduum" zu einer impliziten Synchronisation führt und wir deshalb ebenfalls längere Laufzeiten mit mehr Threads haben.
+Auch ist uns nicht ganz klar, wie die I/O Operationen bei shared-Variablen durch openmp gehandhabt werden, dies könnte ein weiterer Faktor sein für den nicht ganz linearen Graphen.
 
 
 
