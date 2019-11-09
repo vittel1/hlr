@@ -10,7 +10,7 @@ Bei einer geringen Threadzahl verlaufen die beiden Graphen fast identisch, jedoc
 Dies könnte mehrere Gründe haben. Zum einen benötigt das Betriebssystem ebenfalls Ressourcen,
 weshalb unser Programm nicht durchgängig alle benötigten Prozessorkerne nutzen kann.
 Des Weiteren vermuten wir, dass die reduction der Variable "maxresiduum" zu einer impliziten Synchronisation führt und wir deshalb ebenfalls längere Laufzeiten mit mehr Threads haben.
-Auch ist uns nicht ganz klar, wie die I/O Operationen bei shared-Variablen durch openmp gehandhabt werden, dies könnte ein weiterer Faktor sein für den nicht ganz linearen Graphen.
+Ein anderer Grund, über den wir nur spekulieren können, könnte der parallele Schreibzugriff auf die Matrix sein, da alle Threads gleichzeitig schreibend auf die Matrix-Variable zugreifen. Hier gibt es nun zwei Möglichkeiten. Entweder greifen die Threads beim Schreiben ausschließlich auf die Speicherbereiche innerhalb der Matrix zu, die sie in dem Moment beschreiben wollen, oder aber es werden zum Schreiben Sperren genutzt, die mehr als nur den absolut nötigen Bereich sperren, da der gesamte Speicherbereich schließlich nur einer einzigen Variable angehört. Sollte der erste Fall der Realität entsprechen, würde der gleichzeitige Schreibzugriff keine negativen Auswirkungen auf die Laufzeit haben.
 
 
 
