@@ -24,7 +24,7 @@ Thread-Anzahl: 4
 
 Thread-Anzahl: 5
 107.891081s
-108.062088s	~ 107,94s = 1m58s
+108.062088s	~ 107,94s = 1m48s
 107.852730s
 
 Thread-Anzahl: 6
