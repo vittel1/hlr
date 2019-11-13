@@ -26,7 +26,6 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-#include <pthread.h>
 
 #include "partdiff.h"
 
@@ -49,12 +48,6 @@ struct calculation_results
 /* ************************************************************************ */
 /* Global variables                                                         */
 /* ************************************************************************ */
-//HIER
-double maxresiduum;                         /* maximum residuum value of a slave in iteration */
-pthread_mutex_t mutex_res;
-pthread_barrier_t barr;
-int m1 = 0;
-int m2 = 1;
 
 /* time measurement variables */
 struct timeval start_time;       /* time when program started                      */
@@ -183,53 +176,54 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
-struct thread_data{
-	struct options const* options;
-	struct calculation_arguments const* arguments;
-	struct calculation_results* results;
-	int step_size;
-	int start;
-	double pih;
-	double fpisin;
-	int tid;
-};
-
-
-static void *calc_loop(void* thread_args)
+/* ************************************************************************ */
+/* calculate: solves the equation                                           */
+/* ************************************************************************ */
+static
+void
+calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	struct thread_data* data;
-	data = (struct thread_data*) thread_args;
+	int i, j;                                   /* local variables for loops */
+	int m1, m2;                                 /* used as indices for old and new matrices */
+	double star;                                /* four times center value minus 4 neigh.b values */
+	double residuum;                            /* residuum of current iteration */
+	double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 
-	int step_size = data->step_size;
-	int start = data->start;
-	double pih = data->pih;
-	double fpisin = data->fpisin;
-	int tid = data->tid;
+	int const N = arguments->N;
+	double const h = arguments->h;
 
-	struct calculation_arguments const* arguments = data->arguments;
-	struct calculation_results* results = data->results;
-	struct options const* options = data->options;
+	double pih = 0.0;
+	double fpisin = 0.0;
 
 	int term_iteration = options->term_iteration;
-	int const N = arguments->N;
 
-	double star,residuum;
-	int i,j;
+	/* initialize m1 and m2 depending on algorithm */
+	if (options->method == METH_JACOBI)
+	{
+		m1 = 0;
+		m2 = 1;
+	}
+	else
+	{
+		m1 = 0;
+		m2 = 0;
+	}
 
+	if (options->inf_func == FUNC_FPISIN)
+	{
+		pih = PI * h;
+		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
+	}
 
 	while (term_iteration > 0)
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
 
-		if(tid == 0)
-		{
-			maxresiduum = 0;
-		}
-		//BARRIER
-		//pthread_barrier_wait(&barr);
+		maxresiduum = 0;
+
 		/* over all rows */
-		for (i = start+1; i < start + step_size; i++)
+		for (i = 1; i < N; i++)
 		{
 			double fpisin_i = 0.0;
 
@@ -252,126 +246,36 @@ static void *calc_loop(void* thread_args)
 				{
 					residuum = Matrix_In[i][j] - star;
 					residuum = (residuum < 0) ? -residuum : residuum;
-					pthread_mutex_lock(&mutex_res);
 					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
-					pthread_mutex_unlock(&mutex_res);
 				}
 
 				Matrix_Out[i][j] = star;
 			}
 		}
 
-		if(tid == 0)
+		results->stat_iteration++;
+		results->stat_precision = maxresiduum;
+
+		/* exchange m1 and m2 */
+		i = m1;
+		m1 = m2;
+		m2 = i;
+
+		/* check for stopping calculation depending on termination method */
+		if (options->termination == TERM_PREC)
 		{
-
-			results->stat_iteration++;
-			results->stat_precision = maxresiduum;
-
-			/* exchange m1 and m2 */
-			i = m1;
-			m1 = m2;
-			m2 = i;
-
-			/* check for stopping calculation depending on termination method */
-			if (options->termination == TERM_PREC)
+			if (maxresiduum < options->term_precision)
 			{
-				if (maxresiduum < options->term_precision)
-				{
-					term_iteration = 0;
-				}
-			}
-			else if (options->termination == TERM_ITER)
-			{
-				term_iteration--;
+				term_iteration = 0;
 			}
 		}
-	 //BARRIER
-	 pthread_barrier_wait(&barr);
-	}
-	if(tid == 0)
-	{
-		results->m = m2;
-	}
-	free(data);
-	pthread_exit(NULL);
-}
-
-/* ************************************************************************ */
-/* calculate: solves the equation                                           */
-/* ************************************************************************ */
-static
-void
-calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
-{
-	//int i, j;                                   /* local variables for loops */
-	//int m1, m2;                                 /* used as indices for old and new matrices */
-	//double star;                                /* four times center value minus 4 neigh.b values */
-	//double residuum;                            /* residuum of current iteration */
-
-
-	int const N = arguments->N;
-	double const h = arguments->h;
-
-	double pih = 0.0;
-	double fpisin = 0.0;
-
-	//int term_iteration = options->term_iteration;
-
-	/* initialize m1 and m2 depending on algorithm */
-	/*if (options->method == METH_JACOBI)
-	{
-		m1 = 0;
-		m2 = 1;
-	}
-	else
-	{
-		m1 = 0;
-		m2 = 0;
-	}*/
-
-	if (options->inf_func == FUNC_FPISIN)
-	{
-		pih = PI * h;
-		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
-	}
-
-//HIER
-	pthread_t threads [options->number];
-	int rc;
-	void* status;
-
-
-	for(size_t i = 0; i < options->number; i++)
-	{
-		struct thread_data *args = malloc(sizeof(struct thread_data));
-		args->options = options;
-		args->results = results;
-		args->arguments = arguments;
-		args->pih = pih;
-		args->fpisin = fpisin;
-		args->step_size = (arguments->N) / (options->number);
-		int start = i * args->step_size;
-		if(i == (options->number)-1)
+		else if (options->termination == TERM_ITER)
 		{
-			args->step_size = N - start;
-		}
-		args->start = start;
-		args->tid = i;
-		rc = pthread_create(&threads[i], NULL, calc_loop, (void*) args);
-		if(rc){
-			printf("Thread creation failed");
-			exit(1);
+			term_iteration--;
 		}
 	}
 
-	for(size_t i = 0; i < options->number; i++)
-	{
-		rc = pthread_join(threads[i], &status);
-		if(rc)
-		{
-			printf("Thread joining broke");
-		}
-	}
+	results->m = m2;
 }
 
 /* ************************************************************************ */
@@ -475,9 +379,6 @@ main (int argc, char** argv)
 
 	askParams(&options, argc, argv);
 
-	//HIER
-	pthread_mutex_init(&mutex_res, NULL);
-	pthread_barrier_init(&barr, NULL, options.number);
 	initVariables(&arguments, &results, &options);
 
 	allocateMatrices(&arguments);
@@ -491,9 +392,6 @@ main (int argc, char** argv)
 	displayMatrix(&arguments, &results, &options);
 
 	freeMatrices(&arguments);
-	//HIER
-	pthread_mutex_destroy(&mutex_res);
-	pthread_barrier_destroy(&barr);
 
 	return 0;
 }
