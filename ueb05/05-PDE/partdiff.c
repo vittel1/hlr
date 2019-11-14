@@ -26,7 +26,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <sys/time.h>
-
+#include <pthread.h>
 #include "partdiff.h"
 
 struct calculation_arguments
@@ -53,6 +53,7 @@ struct calculation_results
 struct timeval start_time;       /* time when program started                      */
 struct timeval comp_time;        /* time when calculation completed                */
 
+pthread_mutex_t mutex_res;
 
 /* ************************************************************************ */
 /* initVariables: Initializes some global variables                         */
@@ -179,10 +180,30 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 /* ************************************************************************ */
 /* calculate: solves the equation                                           */
 /* ************************************************************************ */
+struct thread_data {
+	struct options const* options;
+	struct calculation_arguments const* arguments;
+	struct calculation_results const* results;
+	int start;
+	int stepsize;
+	int tid;
+};
+
+pthread_mutex_t maxres;
+pthread_barrier_t barrFirst;
+pthread_barrier_t barrSecond;
+
 static
-void
-calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
+void*
+calculate (void* t_data)
 {
+	printf("Start calc... \n");
+
+	struct thread_data* data = t_data;
+	struct calculation_arguments const* arguments = data->arguments;
+	struct calculation_results* results = data->results;
+	struct options const* options = data->options;
+
 	int i, j;                                   /* local variables for loops */
 	int m1, m2;                                 /* used as indices for old and new matrices */
 	double star;                                /* four times center value minus 4 neigh.b values */
@@ -194,6 +215,10 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 	double pih = 0.0;
 	double fpisin = 0.0;
+
+	int step_size = data->stepsize;
+	int start = data->start;
+	int tid = data->tid;
 
 	int term_iteration = options->term_iteration;
 
@@ -215,6 +240,8 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
 	}
 
+	printf("Start while... \n");
+
 	while (term_iteration > 0)
 	{
 		double** Matrix_Out = arguments->Matrix[m1];
@@ -222,8 +249,12 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 		maxresiduum = 0;
 
+		pthread_barrier_wait(&barrFirst);
+
+		//printf("Start first loop... \n");
+
 		/* over all rows */
-		for (i = 1; i < N; i++)
+		for (i = start; i < start + step_size; i++)
 		{
 			double fpisin_i = 0.0;
 
@@ -246,36 +277,42 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 				{
 					residuum = Matrix_In[i][j] - star;
 					residuum = (residuum < 0) ? -residuum : residuum;
+					pthread_mutex_lock(&maxres);
 					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
+					pthread_mutex_unlock(&maxres);
 				}
 
 				Matrix_Out[i][j] = star;
 			}
 		}
+		pthread_barrier_wait(&barrSecond);
 
-		results->stat_iteration++;
-		results->stat_precision = maxresiduum;
-
-		/* exchange m1 and m2 */
-		i = m1;
-		m1 = m2;
-		m2 = i;
-
-		/* check for stopping calculation depending on termination method */
-		if (options->termination == TERM_PREC)
+		if(tid == 0)
 		{
-			if (maxresiduum < options->term_precision)
+			results->stat_iteration++;
+			results->stat_precision = maxresiduum;
+
+			/* exchange m1 and m2 */
+			i = m1;
+			m1 = m2;
+			m2 = i;
+
+			/* check for stopping calculation depending on termination method */
+			if (options->termination == TERM_PREC)
 			{
-				term_iteration = 0;
+				if (maxresiduum < options->term_precision)
+				{
+					term_iteration = 0;
+				}
 			}
-		}
-		else if (options->termination == TERM_ITER)
-		{
-			term_iteration--;
+			else if (options->termination == TERM_ITER)
+			{
+				term_iteration--;
+			}
+			results->m = m2;
 		}
 	}
-
-	results->m = m2;
+	pthread_exit(NULL);
 }
 
 /* ************************************************************************ */
@@ -370,6 +407,8 @@ displayMatrix (struct calculation_arguments* arguments, struct calculation_resul
 /* ************************************************************************ */
 /*  main                                                                    */
 /* ************************************************************************ */
+
+
 int
 main (int argc, char** argv)
 {
@@ -385,7 +424,71 @@ main (int argc, char** argv)
 	initMatrices(&arguments, &options);
 
 	gettimeofday(&start_time, NULL);
-	calculate(&arguments, &results, &options);
+
+
+	/*PThreads*/
+	printf("Start threads....\n");
+
+	void *status;
+
+	struct options* x = &options;
+
+	struct calculation_arguments const* a = &arguments;
+	struct calculation_results* r = &results; 
+	struct options const* o = &options;
+
+	pthread_t threads[x->number];
+	pthread_mutex_init(&maxres, NULL);
+	pthread_attr_t attr;
+	pthread_barrier_init(&barrFirst, NULL, options.number);
+	pthread_barrier_init(&barrSecond, NULL, options.number);
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+
+	pthread_attr_destroy(&attr);
+	for(size_t i = 0; i < x->number; i++) {
+		struct thread_data *data;
+		data = malloc(sizeof(struct thread_data));
+		data->arguments = a;
+		data->options = o;
+		data->results = r;
+		
+
+		
+		data->stepsize = (a->N) / (o->number);
+		printf("Step: %d \n", data->stepsize);
+		printf("Start: %ld \n", i);
+
+		int start = i * data->stepsize + 1;
+	
+		printf("Start: %d \n", data->start);
+
+		
+		if(i == (o->number)-1)
+		{
+			data->stepsize = a->N - start;
+		}
+		data->start = start;
+		data->tid = i;
+
+
+		pthread_create(&threads[i], &attr, &calculate, (void *)data);
+	}
+
+	for(uint64_t t = 0; t < x->number; t++) {
+		pthread_join(threads[t], &status);
+	}
+
+	//free(data);
+	pthread_mutex_destroy(&maxres);
+
+	//calculate(&arguments, &results, &options);
+
+	/*PThread Ende*/
+	
+
 	gettimeofday(&comp_time, NULL);
 
 	displayStatistics(&arguments, &results, &options);
