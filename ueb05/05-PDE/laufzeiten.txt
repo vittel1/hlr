@@ -1,6 +1,0 @@
-partdiffSeq 12 2 512 2 2 1000:
-	8m47,213s
-
-
-
-partdiff-posix 12 2 512 2 2 1000:

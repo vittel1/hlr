@@ -51,8 +51,11 @@ struct calculation_results
 /* ************************************************************************ */
 //HIER
 double maxresiduum;                         /* maximum residuum value of a slave in iteration */
+int term_iteration;
 pthread_mutex_t mutex_res;
-pthread_barrier_t barr;
+pthread_barrier_t barrFirst;
+pthread_barrier_t barrSecond;
+pthread_barrier_t barrTest;
 int m1 = 0;
 int m2 = 1;
 
@@ -210,7 +213,6 @@ static void *calc_loop(void* thread_args)
 	struct calculation_results* results = data->results;
 	struct options const* options = data->options;
 
-	int term_iteration = options->term_iteration;
 	int const N = arguments->N;
 
 	double star,residuum;
@@ -227,9 +229,9 @@ static void *calc_loop(void* thread_args)
 			maxresiduum = 0;
 		}
 		//BARRIER
-		//pthread_barrier_wait(&barr);
+		pthread_barrier_wait(&barrFirst);
 		/* over all rows */
-		for (i = start+1; i < start + step_size; i++)
+		for (i = start; i < start + step_size; i++)
 		{
 			double fpisin_i = 0.0;
 
@@ -260,7 +262,7 @@ static void *calc_loop(void* thread_args)
 				Matrix_Out[i][j] = star;
 			}
 		}
-
+		pthread_barrier_wait(&barrTest);
 		if(tid == 0)
 		{
 
@@ -286,7 +288,7 @@ static void *calc_loop(void* thread_args)
 			}
 		}
 	 //BARRIER
-	 pthread_barrier_wait(&barr);
+	 pthread_barrier_wait(&barrSecond);
 	}
 	if(tid == 0)
 	{
@@ -311,7 +313,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 
 	int const N = arguments->N;
 	double const h = arguments->h;
-
+	term_iteration = options->term_iteration;
 	double pih = 0.0;
 	double fpisin = 0.0;
 
@@ -339,7 +341,9 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	pthread_t threads [options->number];
 	int rc;
 	void* status;
-
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
 	for(size_t i = 0; i < options->number; i++)
 	{
@@ -350,19 +354,21 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		args->pih = pih;
 		args->fpisin = fpisin;
 		args->step_size = (arguments->N) / (options->number);
-		int start = i * args->step_size;
+		int start = i * args->step_size + 1;
 		if(i == (options->number)-1)
 		{
 			args->step_size = N - start;
 		}
 		args->start = start;
 		args->tid = i;
-		rc = pthread_create(&threads[i], NULL, calc_loop, (void*) args);
+
+		rc = pthread_create(&threads[i], &attr, calc_loop, (void*) args);
 		if(rc){
 			printf("Thread creation failed");
 			exit(1);
 		}
 	}
+	pthread_attr_destroy(&attr);
 
 	for(size_t i = 0; i < options->number; i++)
 	{
@@ -477,7 +483,10 @@ main (int argc, char** argv)
 
 	//HIER
 	pthread_mutex_init(&mutex_res, NULL);
-	pthread_barrier_init(&barr, NULL, options.number);
+	pthread_barrier_init(&barrFirst, NULL, options.number);
+	pthread_barrier_init(&barrSecond, NULL, options.number);
+	pthread_barrier_init(&barrTest, NULL, options.number);
+
 	initVariables(&arguments, &results, &options);
 
 	allocateMatrices(&arguments);
@@ -493,7 +502,9 @@ main (int argc, char** argv)
 	freeMatrices(&arguments);
 	//HIER
 	pthread_mutex_destroy(&mutex_res);
-	pthread_barrier_destroy(&barr);
+	pthread_barrier_destroy(&barrFirst);
+	pthread_barrier_destroy(&barrSecond);
+	pthread_barrier_destroy(&barrTest);
 
 	return 0;
 }
