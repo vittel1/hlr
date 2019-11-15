@@ -46,16 +46,33 @@ struct calculation_results
 	double    stat_precision; /* actual precision of all slaves in iteration    */
 };
 
+struct thread_data{
+	struct options const* options;
+	struct calculation_arguments const* arguments;
+	struct calculation_results* results;
+	int step_size; /*Anzahl der Iterationen der äußeren for-Schleife eines Threads*/
+	int start;	/*Startindex der äußeren for-Schleife eines Threads*/
+	double pih;
+	double fpisin;
+	int tid; /*einzigartige Thread ID*/
+};
+
 /* ************************************************************************ */
 /* Global variables                                                         */
 /* ************************************************************************ */
-//HIER
+
 double maxresiduum;                         /* maximum residuum value of a slave in iteration */
 int term_iteration;
-pthread_mutex_t mutex_res;
+
+pthread_mutex_t mutex_res;	/*Mutex für maxresiduum*/
+
+/*Barriers zum Synchronisieren der Threads*/
 pthread_barrier_t barrFirst;
-pthread_barrier_t barrSecond;
-pthread_barrier_t barrTest;
+pthread_barrier_t barrLast;
+pthread_barrier_t barrMid;
+
+/*m1 und m2 können global gesetzt werden und müssen auch nicht verändert werden,
+da diese Variante des Programms für Gauß-Seidel eh nicht mehr funktioniert*/
 int m1 = 0;
 int m2 = 1;
 
@@ -186,23 +203,16 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
-struct thread_data{
-	struct options const* options;
-	struct calculation_arguments const* arguments;
-	struct calculation_results* results;
-	int step_size;
-	int start;
-	double pih;
-	double fpisin;
-	int tid;
-};
-
-
+/*Diese Funktion wird von den einzelnen Threads ausgeführt, im Parameter
+thread_args werden alle wichtigen Daten wie Thread ID oder Anzahl der Iterationen
+übergeben*/
 static void *calc_loop(void* thread_args)
 {
+	//Typkonversion damit vernünftig auf thread_args zugegriffen werden kann
 	struct thread_data* data;
 	data = (struct thread_data*) thread_args;
 
+	//Initialisierung der lokalen Variablen aus den übergebenen Daten
 	int step_size = data->step_size;
 	int start = data->start;
 	double pih = data->pih;
@@ -224,12 +234,15 @@ static void *calc_loop(void* thread_args)
 		double** Matrix_Out = arguments->Matrix[m1];
 		double** Matrix_In  = arguments->Matrix[m2];
 
+		//maxresiduum muss nur von einem einzigen Thread angepasst werden, also wird tid abgefragt
 		if(tid == 0)
 		{
 			maxresiduum = 0;
 		}
-		//BARRIER
+
+		//Barrier zur Vermeidung von Race conditions
 		pthread_barrier_wait(&barrFirst);
+
 		/* over all rows */
 		for (i = start; i < start + step_size; i++)
 		{
@@ -254,6 +267,8 @@ static void *calc_loop(void* thread_args)
 				{
 					residuum = Matrix_In[i][j] - star;
 					residuum = (residuum < 0) ? -residuum : residuum;
+
+					//maxresiduum ist global, also muss der Zugriff durch Mutexes geregelt werden
 					pthread_mutex_lock(&mutex_res);
 					maxresiduum = (residuum < maxresiduum) ? maxresiduum : residuum;
 					pthread_mutex_unlock(&mutex_res);
@@ -262,7 +277,10 @@ static void *calc_loop(void* thread_args)
 				Matrix_Out[i][j] = star;
 			}
 		}
-		pthread_barrier_wait(&barrTest);
+
+		//erneute Synchronisierung, damit Thread mit tid=0 Werte wie stat_precision nicht zu früh setzt
+		pthread_barrier_wait(&barrMid);
+		//folgender Code muss nur von einem Thread ausgeführt werden
 		if(tid == 0)
 		{
 
@@ -287,13 +305,14 @@ static void *calc_loop(void* thread_args)
 				term_iteration--;
 			}
 		}
-	 //BARRIER
-	 pthread_barrier_wait(&barrSecond);
+	 //erneutes Synchronisieren (potentiell zu viele Barriers, aber funktioniert)
+	 pthread_barrier_wait(&barrLast);
 	}
 	if(tid == 0)
 	{
 		results->m = m2;
 	}
+	//Freigeben der thread_args und Beenden des jeweiligen Threads
 	free(data);
 	pthread_exit(NULL);
 }
@@ -305,11 +324,6 @@ static
 void
 calculate (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options)
 {
-	//int i, j;                                   /* local variables for loops */
-	//int m1, m2;                                 /* used as indices for old and new matrices */
-	//double star;                                /* four times center value minus 4 neigh.b values */
-	//double residuum;                            /* residuum of current iteration */
-
 
 	int const N = arguments->N;
 	double const h = arguments->h;
@@ -317,36 +331,25 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	double pih = 0.0;
 	double fpisin = 0.0;
 
-	//int term_iteration = options->term_iteration;
-
-	/* initialize m1 and m2 depending on algorithm */
-	/*if (options->method == METH_JACOBI)
-	{
-		m1 = 0;
-		m2 = 1;
-	}
-	else
-	{
-		m1 = 0;
-		m2 = 0;
-	}*/
-
 	if (options->inf_func == FUNC_FPISIN)
 	{
 		pih = PI * h;
 		fpisin = 0.25 * TWO_PI_SQUARE * h * h;
 	}
 
-//HIER
+//Deklaration der benötigten Anzahl Threads und Variablen
 	pthread_t threads [options->number];
 	int rc;
 	void* status;
+
+	//Thread-Attribut genutzt um Threads explizit joinable zu machen
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
 	for(size_t i = 0; i < options->number; i++)
 	{
+		//Aufbau des benötigten Parameters
 		struct thread_data *args = malloc(sizeof(struct thread_data));
 		args->options = options;
 		args->results = results;
@@ -355,13 +358,17 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 		args->fpisin = fpisin;
 		args->step_size = (arguments->N) / (options->number);
 		int start = i * args->step_size + 1;
+
+		//damit der letzte Thread in jedem Fall bis N läuft
 		if(i == (options->number)-1)
 		{
 			args->step_size = N - start;
 		}
+
 		args->start = start;
 		args->tid = i;
 
+		//Threads werden erzeugt, bei Fehler wird das Programm abgebrochen
 		rc = pthread_create(&threads[i], &attr, calc_loop, (void*) args);
 		if(rc){
 			printf("Thread creation failed");
@@ -370,6 +377,7 @@ calculate (struct calculation_arguments const* arguments, struct calculation_res
 	}
 	pthread_attr_destroy(&attr);
 
+	//Threads werden gejoined, bei Fehler wird das Programm abgebrochen
 	for(size_t i = 0; i < options->number; i++)
 	{
 		rc = pthread_join(threads[i], &status);
@@ -481,11 +489,11 @@ main (int argc, char** argv)
 
 	askParams(&options, argc, argv);
 
-	//HIER
+	//Mutex und Barriers müssen initialisiert werden
 	pthread_mutex_init(&mutex_res, NULL);
 	pthread_barrier_init(&barrFirst, NULL, options.number);
-	pthread_barrier_init(&barrSecond, NULL, options.number);
-	pthread_barrier_init(&barrTest, NULL, options.number);
+	pthread_barrier_init(&barrLast, NULL, options.number);
+	pthread_barrier_init(&barrMid, NULL, options.number);
 
 	initVariables(&arguments, &results, &options);
 
@@ -500,11 +508,12 @@ main (int argc, char** argv)
 	displayMatrix(&arguments, &results, &options);
 
 	freeMatrices(&arguments);
-	//HIER
+
+	//Mutex und Barriers müssen am Ende wieder freigegeben werden
 	pthread_mutex_destroy(&mutex_res);
 	pthread_barrier_destroy(&barrFirst);
-	pthread_barrier_destroy(&barrSecond);
-	pthread_barrier_destroy(&barrTest);
+	pthread_barrier_destroy(&barrLast);
+	pthread_barrier_destroy(&barrMid);
 
 	return 0;
 }
