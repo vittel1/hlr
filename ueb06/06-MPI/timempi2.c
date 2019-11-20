@@ -40,7 +40,6 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		ms = 0;
 		for(int i = 1; i < world_size; i++)
 		{
 			char* buf;
@@ -66,7 +65,7 @@ int main(int argc, char** argv)
 
 	//reduzieren
 	suseconds_t reduced_ms;
-	MPI_Reduce(&ms, &reduced_ms, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&ms, &reduced_ms, 1, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
 	if(world_rank == 0)
 	{
 		printf("%ld\n", reduced_ms);
