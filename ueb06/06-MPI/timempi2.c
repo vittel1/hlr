@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 		char* msg;
 		asprintf(&msg, "%s: %s \n", hostname, time_with_ms);
 		//Message_send
-		MPI_Send(msg, strlen(msg), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(msg, (strlen(msg)+1), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 		//fertig
 	}
 	else
