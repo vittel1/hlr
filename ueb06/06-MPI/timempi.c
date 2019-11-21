@@ -27,12 +27,14 @@ int main(int argc, char** argv)
 		asprintf(&time_with_ms, "%s.%ld", buffer_time, t.tv_usec);
 
 		char hostname[8];
+		hostname[7] = '\0';
 		gethostname(hostname, 8);
 
 		char* msg;
 		asprintf(&msg, "%s: %s \n", hostname, time_with_ms);
 		//Message_send
 		MPI_Send(msg, (strlen(msg)+1), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+		free(msg);		
 		//barrier
 		MPI_Barrier(MPI_COMM_WORLD);
 		//fertig
@@ -58,6 +60,7 @@ int main(int argc, char** argv)
 			MPI_Recv(buf, nbytes, MPI_CHAR, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
 			//print
 			printf(buf);
+			free(buf);
 		}
 		//auch an die barrier
 		MPI_Barrier(MPI_COMM_WORLD);
