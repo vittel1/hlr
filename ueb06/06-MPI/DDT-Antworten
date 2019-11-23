@@ -1,0 +1,25 @@
+1) Wie kann man in DDT die Programmparameter angeben? Gibt es dafür auch andere Möglichkeiten? Wenn ja, welche?
+    Die Programmparameter können in einem extra Fenster angegeben werden, bevor das Programm ausgeführt wird.
+
+2) Setzen Sie in einer Zeile einen Breakpoint. Welche Step-Möglichkeiten gibt es und wie unterscheiden sich diese?
+Step-Möglichkeiten:
+    Step-Into:  Action um z.B. einen Methodenaufruf zu verfolgen, es wird in die Methode reingesprungen und man kann dann den Methodenaufruf Schritt für Schritt debuggen. 
+                Enthält die aktuelle Zeile kein Aufruf zum reinspringen, verhält sich die Action wie Step-Over und springt zur nächsten Zeile.
+    Step-Over:  Action zum überspringen der aktuellen Zeile, enthält die Zeile eine Methode wird diese ausgeführt und das Ergebnis ist verfügbar, ohne jede einzelne Zeile debuggen zu müssen.
+    Step-Out:   Zum Rauspringen von einem Step-Into, der Debugger springt zurück an den Zeile wo der Methodenaufruf stattgefunden hat.
+    Play/Continue:
+
+3) Schauen Sie sich die Werte der Variable an, in der Sie den Rang des aktuellen Prozesses gespeichert haben. 
+Was fällt Ihnen in der Darstellung auf? Vergleichen Sie die Werte aller Prozesse mit Hilfe des Rechtsklickmenüs.
+    Es fällt auf, dass Zahlenwerte komische Zeichen vor dem eigentlichen Zahlenwert stehen haben. 
+    Vergleicht man jedoch die gesamten Werte der Variable, werden die Integer richtig dargstellt.
+
+4) Machen Sie sich mit der Funktion des Evaluate-Fensters in der rechten unteren Ecke vertraut.
+
+5) In der oberen Leiste finden Sie eine Übersicht aller Prozesse und Threads Ihres Programmes. 
+Wechseln Sie zwischen den einzelnen Prozessen und beobachtenSie das Evaluate-Fenster.
+    
+
+6) Erweitern Sie Ihr Programm um ein Array und initialisieren Sie es mit beliebigen Zahlenwerten. 
+Lassen Sie sich die Werte anzeigen. Welche sonstigen Visualisie-rungsmöglichkeiten bietet DDT? 
+(Hinweis:Das Array wird nur für diese Aufgabebenötigt und soll in den abgegebenen Programmentimempibzw.timempi2nichtenthalten sein.)

@@ -34,7 +34,8 @@ int main(int argc, char** argv)
 		asprintf(&msg, "%s: %s \n", hostname, time_with_ms);
 		//Message_send
 		MPI_Send(msg, (strlen(msg)+1), MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-		free(msg);		
+		free(msg);
+		free(time_with_ms);		
 		//barrier
 		MPI_Barrier(MPI_COMM_WORLD);
 		//fertig
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
 	{
 		for(int i = 1; i < world_size; i++)
 		{
-			char* buf;
+			char* buf ="";
 			//probeMessage
 			MPI_Status status;
 			int nbytes;
