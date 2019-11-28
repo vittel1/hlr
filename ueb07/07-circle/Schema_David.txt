@@ -1,0 +1,61 @@
+Datenaufteilung:
+
+	Jacobi:
+		Zeilenweise Aufteilung, Prozesse sollten in etwa die gleiche Anzahl an Zeilen kriegen
+		Die Ränder mit den Nullen müssen mit berücksichtigt werden
+		Das allocieren und initieren der Matrix muss für die Prozesse angepasst werden (sind nun kleiner)
+		Jeder Prozess verwaltet seine eigenen Daten, da wir eine zeilenweise Aufteilung haben,
+		benötigten die unteren Prozesse jeweils die unterste Zeile des darüber liegenden Prozesses.
+		Eventuell muss das maxresiduum geteilt werden für die Abbruchbedingung
+
+	Gauß:
+		Wie oben, es gibt eine zeilenweise Aufteilung. Da wir nun aber mit den aktuellsten Werten
+		der Matrix weiter rechnen müssen, gibt es einen ständigen Austausch der Prozesse, damit
+		wir den algorithmus einhalten können. D.h. nach einer Berechnung senden der überliegende Prozess,
+		seine Daten an den unterliegenden Prozess. Ein Prozess darf auch erst weiter rechnen, wenn er
+		seine Daten empfangen hat. -> Zeitverzögerung der arbeitsweise der Prozesse.
+		maxresiduum muss hier auf jeden Fall geteilt werden, damit der letzte Prozess entscheidet
+		ob abgebrochen wird. (Eventuell bietet sich hier ein Prozess an der die Daten verwaltet,
+		damit alle immer mit den aktuellsten werten rechnen)
+
+
+Schema:
+	Jacobi:
+		Die Berechnung findet statt, sobald der Prozess seine aktuellste Ziel-Matrix hat,
+		sprich er muss ggfs. darauf warten, dass der Prozess über ihn, seine letzte Zeile berechnet hat.
+		Sobald er die Zeile hat, kann er seine Berechnungen durchführen.
+		Bei dieser Variante bietet es sich an, dass die letzte Zeile als ein gesamtes Datenpacket zum
+		darunter liegenden Prozess gesendet wird. Um den wartezeiten ein wenig entgegenzuwirken,
+		berechnen wir an dieser Stelle bereits die Daten, die der Prozess selber verwaltet und nicht
+		von jemanden empfangen muss. So vermeiden wir auch größere Wartezeiten, weil wir die "letzte" Zeile
+		in der Teil-Matrix vom Prozess direkt als erstes berechnen können und schon wegsenden können.
+
+	Gau�:
+		Da wir hier nur mit einer Matrix arbeiten, wird es ein wenig schwieriger die Prozesse synchron
+		arbeiten zu lassen, weil die Prozess immer auf die neusten Daten des Vorgänger Prozesses
+		warten müssen (ohne bereits irgendetwas berechnen zu können)
+			-> je weiter unten der Prozess ist, desto größer die Zeitversetzung
+		Das Senden der Daten muss augenblicklich geschehen, d.h. der oberste Prozess berechnet den ersten
+		Wert und sendet diesen an den Prozess darunter, dieser kann dann ebenfalls seinen ersten Wert
+		in der Zeile berechnen, usw.
+		So kommt es natürlich zu staus für die unteren Prozesse, weil diese auf die obereren warten müssen
+		(lässt sich aber glaube ich nicht anders umsetzen?)
+
+Abbruch:
+	Jacobi:
+		Iteration: sobald ein Prozess seine iteration erreicht hat, führt er die Schleife nicht mehr aus
+			weil die unteren Prozesse eh immer auf den überliegenden Prozess warten müssen
+				zwecks Zeile zum berechnen, sollten alle Prozesse in etwa gleich fertig sein
+
+		Genauigkeit: jeder Prozess berechnet für sich seine Genauigkeit, sobald er diese erreicht hat,
+			sendet er ein Signal an den darunter liegenden Prozess und hört mit seiner iteration auf
+			der Prozess weiß nun, das die genauigkeit erreicht wurde
+			sollte die genauigkeit in einen unteren Prozess erreicht sein, muss die abbruch bedingung
+			natürlich ring-weise weitergeleitet werden
+
+	Gauß:
+		Iteration: jeder Prozess befindet sich mehr oder weniger in der gleichen iteration, nur zeitversetzt
+			d.h. also der erste Prozess wird die maxiteration als erstes erreichen und ein abbruch
+			senden.
+		genauigkeit: dürfte glaube ich ähnlich funktioniern...
+			
