@@ -1,0 +1,54 @@
+Zur Datenaufteilung:
+Es würde sich eine zeilenweise Aufteilung anbieten, da beide Verfahren von links nach rechts,
+oben nach unten über die Matrix iterieren. Hierbei bekommt jeder Prozess in etwa gleich viele Zeilen
+(bei üngünstiger Anzahl Interlines haben die ersten Prozesse eine Zeile mehr als die anderen).
+Zusätzlich zu der Matrix, über die iteriert wird, muss auch der entsprechende Abschnitt der
+Zielmatrix in den Prozessen vorliegen (zumindest bei Jacobi). Eine Alternative dazu wäre eine Art
+Verwaltungsprozess, der die Ergebnisse der anderen einsammelt und in die Zielmatrix schreibt
+(auch wieder nur relevant für Jacobi).
+
+
+Parallelisierungsschema für Jacobi:
+
+(Annahme: Erster Prozess bekommt die ersten Zeilen und der letzte Prozess die letzten Zeilen.)
+Da sich die Eingabe während einer Iteration über die gesamte Matrix nicht ändert, reicht es, wenn am
+Anfang der Iteration alle Prozesse, die einen Nachfolger haben, ihre letzte Zeile an eben diesen
+senden und alle Prozesse, die einen Vörgänger haben, ihre erste Zeile an den Vorgänger senden.
+Danach kann jeder Prozess seine Berechnungen durchführen und die Ergebnisse in die Zielmatrix
+eintragen. Am Ende der Berechnung werden die beiden Matrizen von einem Prozess vertauscht und die
+Abbruchbedingungen werden überprüft, während der Rest an einer Barriere wartet.
+Nach Abschluss dieser Nachbereitung kann, wenn nicht abgebrochen wurde, die nächste Iteration
+beginnen.
+
+
+Parallelisierungsschema für Gauß-Seidel:
+
+Eine Möglichkeit, die mit extrem viel Nachrichtenaustausch verbunden ist, wäre die Zuteilung von
+jeweils nur einer Zeile pro Prozess. Prozess 0 würde dann sein erstes Element berechnen und nach
+abgeschlossener Berechnung Prozess 1 benachrichtigen und ihm den Wert, den Prozess 1 für seine erste
+Berechnung benötigt, zuschicken. Prozess 1 macht dann seine Berechnung und schickt das Ergebnis an
+Prozess 2 und wartet danach darauf, dass Prozess 0 ihm das nächste Ergebnis übermittelt.
+Prozess 2 macht dann dasselbe usw.
+Im Endeffekt wäre also Prozess n-1 immer einen Schritt vor Prozess n (weiter rechts) und Prozess n+1
+wäre immer einen Schritt hinter Prozess n (weiter links). Allerdings müsste der derzeitig hinterste
+Prozess darauf warten, dass der erste Prozess mit seiner Reihe durch ist, um dann die Zeile nach
+dem eben noch letzten Prozess zu bearbeiten.
+
+
+Diskussion der Abbruchproblematik:
+
+Für Jacobi ist es recht simpel, sowohl für den Abbruch nach Iteration als auch den nach Genauigkeit.
+Am Ende einer Iteration wird zuerst der maximale Wert von maxresiduum ermittelt, indem die lokalen
+maxresiduums der einzelnen Prozesse reduziert werden. Der eine Verwaltungsprozess, der bei dieser
+Reduktion als root-Prozess herhält, wird das globale maxresiduum aktualisieren und die
+Iterationszahl. Der root-Prozess startet dann einen Broadcast und benachrichtigt alle anderen
+Prozesse, ob eine weitere Iteration ausgeführt werden soll oder ob das jeweilige Abbruchkriterium
+erreicht wurde. Alle Prozesse befinden sich also stets in der selben Iteration, sowohl am Anfang als
+auch am Ende.
+
+Bei Gauß-Seidel würde ebenfalls nach der Beendigung des letzten Prozesses bzw. der letzten Reihe
+ein Prozess alle Abbruchbedingungen prüfen. Dieser Prozess würde ebenfalls die lokalen maxresiduums
+der anderen Prozesse reduzieren und in die globale maxresiduum-Variable schreiben. Leider müssen auch
+hier alle Prozesse am Ende einer Iteration synchronisiert werden, damit der root-Prozess einen
+Broadcast starten kann, der die Prozesse darüber informiert, ob eine weitere Iteration folgt.
+Somit befinden sich auch in dieser Variante alle Prozesse zu jeder Zeit in der selben Iteration.
