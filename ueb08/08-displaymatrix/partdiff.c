@@ -396,7 +396,7 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 
 			if (options->inf_func == FUNC_FPISIN)
 			{
-				double adaptedI = (double)(i + data->globalStart);
+				double adaptedI = rank == 0 ? (double) i : (double)(i - 1 + data->globalStart);
 				//fpisin_i = fpisin * sin(pih * (double)i);
 				fpisin_i = fpisin * sin(pih * adaptedI);
 			}
