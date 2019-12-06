@@ -65,6 +65,8 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 	arguments->N = (options->interlines * 8) + 9 - 1;
 
 	int N = arguments->N;
+
+	//Falls es mehr Prozesse als Matrixzeilen gibt, brich ab
 	if(N < data->world_size && data->rank == 0)
 	{
 		printf("Zu viele Prozesse für zu wenig Interlines, Abbruch\n");
@@ -268,8 +270,8 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 	//damit irec und isend verwendet werden können, werden einige Request- und
 	//Status-Variablen gebraucht
 	//Namensschema: 1. request oder status
-	//							2. senden oder empfangen
-	//							3. vom Vorgänger(Pre) oder vom Nachfolger(Post)
+	//		2. senden oder empfangen
+	//		3. vom Vorgänger(Pre) oder vom Nachfolger(Post)
 	MPI_Request requestRecPost;
 	MPI_Request requestRecPre;
 	MPI_Request requestSendPost;
@@ -280,8 +282,8 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 	MPI_Status statusSendPost;
 	MPI_Status statusSendPre;
 
-	double* bufPre = malloc(sizeof(double) * (N+1));
-	double* bufPost = malloc(sizeof(double) * (N+1));
+	double* bufPre = malloc(sizeof(double) * (N+1)); /*Hier wird die empfangene Zeile des Vorgängers gespeichert*/
+	double* bufPost = malloc(sizeof(double) * (N+1)); /*Hier wird die empfangene Zeile des Nachfolgers gespeichert*/
 
 	int rank = data->rank;
 	int lines = data->numLines;
@@ -333,7 +335,7 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 		double* firstLine = Matrix_In[0];
 		double* lastLine = Matrix_In[lines-1];
 
-		//rank schickt letzte Zeile an 1 und empfängt von die erste von 1
+		//rank 0 schickt letzte Zeile an 1 und empfängt von die erste von 1
 		if(rank == 0)
 		{
 			MPI_Irecv(bufPost, N + 1, MPI_DOUBLE, post, 0, MPI_COMM_WORLD, &requestRecPost);
@@ -349,7 +351,7 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 
 			MPI_Wait(&requestSendPost, &statusSendPost);
 		}
-		//letzter schickt erste an letzter-1 und empfängt von letzter-1
+		//letzter Prozess schickt erste Zeile an letzter-1 und empfängt von letzter-1
 		else if(rank == (data->world_size - 1))
 		{
 			MPI_Irecv(bufPre, N + 1, MPI_DOUBLE, pre, 0, MPI_COMM_WORLD, &requestRecPre);
@@ -396,6 +398,8 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 
 			if (options->inf_func == FUNC_FPISIN)
 			{
+				//da die Schleife nicht mehr über die gesamte Matrix geht, muss i angepasst werden;
+				//für alle Prozesse außer den ersten muss der globale Start draufgerechnet werden
 				double adaptedI = rank == 0 ? (double) i : (double)(i - 1 + data->globalStart);
 				//fpisin_i = fpisin * sin(pih * (double)i);
 				fpisin_i = fpisin * sin(pih * adaptedI);
@@ -419,7 +423,7 @@ calculateJacobiMPI(struct calculation_arguments const* arguments, struct calcula
 				}
 
 				//Weil Matrix_Out nur die ursprüngliche Zeilenanzahl ohne die empfangenen
-				//hat, müssen hier für alle Ränge != 0 der erste Index um einen verringert werden
+				//hat, müssen hier für alle Ränge != 0 der erste Index um 1 verringert werden
 				if(rank == 0)
 				{
 					Matrix_Out[i][j] = star;
@@ -630,9 +634,9 @@ displayStatistics (struct calculation_arguments const* arguments, struct calcula
 /** Beschreibung der Funktion displayMatrix:                               **/
 /**                                                                        **/
 /** Die Funktion displayMatrix gibt eine Matrix                            **/
-/** in einer "ubersichtlichen Art und Weise auf die Standardausgabe aus.   **/
+/** in einer ubersichtlichen Art und Weise auf die Standardausgabe aus.   **/
 /**                                                                        **/
-/** Die "Ubersichtlichkeit wird erreicht, indem nur ein Teil der Matrix    **/
+/** Die Ubersichtlichkeit wird erreicht, indem nur ein Teil der Matrix    **/
 /** ausgegeben wird. Aus der Matrix werden die Randzeilen/-spalten sowie   **/
 /** sieben Zwischenzeilen ausgegeben.                                      **/
 /****************************************************************************/
@@ -667,73 +671,73 @@ displayMatrixMPI(struct calculation_arguments* arguments, struct calculation_res
 {
 	int const elements = 8 * options->interlines + 9;
 
-  int x, y;
-  double** Matrix = arguments->Matrix[results->m];
-  MPI_Status status;
+  	int x, y;
+  	double** Matrix = arguments->Matrix[results->m];
+  	MPI_Status status;
 
 	int rank = data->rank;
 	int from = data->globalStart;
 	int to = data->globalEnd;
 
-  /* first line belongs to rank 0 */
-  //if (rank == 0)
-  //  from--;
+  	/* first line belongs to rank 0 */
+ 	 //if (rank == 0)
+  	//  from--;
 
-  /* last line belongs to rank size - 1 */
-  //if (rank + 1 == size)
-  //  to++;
+  	/* last line belongs to rank size - 1 */
+  	//if (rank + 1 == size)
+  	//  to++;
 
-  if (rank == 0)
-    printf("Matrix:\n");
+  	if (rank == 0)
+    	printf("Matrix:\n");
 
-  for (y = 0; y < 9; y++)
-  {
-    int line = y * (options->interlines + 1);
+  	for (y = 0; y < 9; y++)
+  	{
+    		int line = y * (options->interlines + 1);
 
-    if (rank == 0)
-    {
-      /* check whether this line belongs to rank 0 */
-      if (line > to)
-      {
-        /* use the tag to receive the lines in the correct order
-         * the line is stored in Matrix[0], because we do not need it anymore */
-        MPI_Recv(Matrix[0], elements, MPI_DOUBLE, MPI_ANY_SOURCE, 42 + y, MPI_COMM_WORLD, &status);
-      }
-    }
-    else
-    {
-      if (line >= from && line <= to)
-      {
-        /* if the line belongs to this process, send it to rank 0
-         * (line - from + 1) is used to calculate the correct local address */
-        //MPI_Send(Matrix[line - from + 1], elements, MPI_DOUBLE, 0, 42 + y, MPI_COMM_WORLD);
+    		if (rank == 0)
+    		{
+      			/* check whether this line belongs to rank 0 */
+      			if (line > to)
+      			{
+        			/* use the tag to receive the lines in the correct order
+         			* the line is stored in Matrix[0], because we do not need it anymore */
+        			MPI_Recv(Matrix[0], elements, MPI_DOUBLE, MPI_ANY_SOURCE, 42 + y, MPI_COMM_WORLD, &status);
+      			}
+    		}
+    		else
+    		{
+      			if (line >= from && line <= to)
+      			{
+        			/* if the line belongs to this process, send it to rank 0
+         			* (line - from + 1) is used to calculate the correct local address */
+        			//MPI_Send(Matrix[line - from + 1], elements, MPI_DOUBLE, 0, 42 + y, MPI_COMM_WORLD);
 				MPI_Send(Matrix[line - from ], elements, MPI_DOUBLE, 0, 42 + y, MPI_COMM_WORLD);
-      }
-    }
+      			}
+    		}
 
-    if (rank == 0)
-    {
-      for (x = 0; x < 9; x++)
-      {
-        int col = x * (options->interlines + 1);
+   		if (rank == 0)
+    		{
+      			for (x = 0; x < 9; x++)
+      			{
+        			int col = x * (options->interlines + 1);
 
-        if (line >= from && line <= to)
-        {
-          /* this line belongs to rank 0 */
-          printf("%7.4f", Matrix[line][col]);
-        }
-        else
-        {
-          /* this line belongs to another rank and was received above */
-          printf("%7.4f", Matrix[0][col]);
-        }
-      }
+        			if (line >= from && line <= to)
+        			{
+          				/* this line belongs to rank 0 */
+				        printf("%7.4f", Matrix[line][col]);
+        			}
+        			else
+        			{
+          				/* this line belongs to another rank and was received above */
+          				printf("%7.4f", Matrix[0][col]);
+        			}
+      			}
 
-      printf("\n");
-    }
-  }
+      			printf("\n");
+    		}
+  	}
 
-  fflush(stdout);
+	fflush(stdout);
 }
 
 /* ************************************************************************ */
@@ -773,7 +777,8 @@ main (int argc, char** argv)
 	{
 		gettimeofday(&start_time, NULL);
 	}
-
+	
+	//wenn es nur einen Prozess gibt, wird die normale calculate-Funktion gerufen
 	if(world_size == 1)
 	{
 		calculate(&arguments, &results, &options);
@@ -791,6 +796,7 @@ main (int argc, char** argv)
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
+	//wenn es nur einen Prozess gibt, kann die normale displayMatrix-Funktion genutzt werden
 	if(world_size == 1)
 	{
 		displayMatrix(&arguments, &results, &options);

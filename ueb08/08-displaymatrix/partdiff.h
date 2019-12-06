@@ -46,11 +46,11 @@ struct options
 };
 
 struct thread_data{
-	int rank;
-	int world_size;
-	int numLines;
-	int globalStart;
-	int globalEnd;
+	int rank;		/*rank des Prozesses*/
+	int world_size;		/*Gesamtanzahl der Prozesse*/
+	int numLines;		/*Anzahl Zeilen, die jeder Prozess von der Matrix hält*/
+	int globalStart;	/*global gesehener Index der ersten Zeile der lokalen Matrix*/
+	int globalEnd;		/*global gesehener Index der letzten Zeile der lokalen Matrix*/
 };
 
 /* *************************** */
