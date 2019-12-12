@@ -1,3 +1,5 @@
+calculate:
+
 int i,j;
 double star,
 double residuum, maxresiduum;
@@ -63,14 +65,54 @@ while(term_iteration > 0)
 
 	results->stat_iteration++;
 	results->stat_precision = maxresiduum;
+	
+	
 
 	if(options->termination == TERM_PREC)
+		MPI_Send(maxresiduum, toManagement);
+		
 		if(maxresiduum < options->term_precision)
-			term_iteration = 0;
+			int abort;
+			MPI_Recv(askManagementProcess and save answer in abort);
+			if(abort)
+				term_iteration = 0;
+				MPI_Recv(maxresiduum, reducedMaxresiduumFromManagement);
 
 	else if(options->termination == TERM_ITER)
 		if(term_iteration == 1)
-			MPI_AllReduce(maxresiduum, MPI_MAX);
+			MPI_Allreduce(maxresiduum, MPI_MAX);
 		term_iteration--;
 
 results->m = 0;
+
+
+
+//Falls Genauigkeit das Abbruchkriterium ist, gilt folgendes:
+//der höchstrangige Prozess wird nicht mitrechnen, stattdessen verwaltet er die maxresiduums der anderen
+
+managePrecision:
+
+double term_precision = options->term_precision;
+double maxresiduum;
+int abort = 0;
+
+while(true)
+	
+	double maxresiduumAll = 0.0;
+	Array processesToInformAboutAborting[world_size - 2] = 0 for every entry;
+	
+	for(int i = 0; i < world_size - 2; i++)
+		double newresiduum;		
+		MPI_Recv(newresiduum, fromProcessWithRankI);
+		
+		if(newresiduum < term_precision)
+			processesToInformAboutAborting[i] = 1;
+
+		maxresiduumAll = max(newresiduum, maxresiduumAll)
+
+	maxresiduum = maxresiduumAll;
+	if(maxresiduum < term_precision)
+		abort = 1;
+	
+	for(every 1 in processesToInformAboutAborting)
+		MPI_Send(abort, toCorrespondingProcess);
