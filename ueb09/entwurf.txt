@@ -1,0 +1,28 @@
+
+if(RankSize > 1) 
+    calculate-Gauss-Seidel:
+        while(term_iteration > 0)
+            //Receive
+            if(Rank != MASTER)
+                MPI_Recv(last row of previous process)
+
+                if(termination == precision)
+                    MPI_Recv(precision of previous rank)
+            
+            if(Rank != LAST)
+                MPI_Recv(first row of next process)
+
+            //Send
+            if(Rank != MASTER)
+                MPI_Send(first row of current matrix to previous rank)
+                
+            if(Rank != LAST)
+                MPI_Send(last row of current matrix to next rank)
+
+                if(termination == precision)
+                    MPI_Send(precision to next rank)
+
+            //Reduce, distribute the maxresiduum to all processes
+            MPI_Allreduce(maxresiduum)
+            resultprecision = maxresiduum
+
