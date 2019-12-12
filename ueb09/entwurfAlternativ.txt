@@ -1,0 +1,76 @@
+int i,j;
+double star,
+double residuum, maxresiduum;
+
+int const N = arguments->N;
+double const h = arguments->h;
+
+double pih = 0.0;
+double fpisin = 0.0;
+
+int term_iteration = options->term_iteration;
+
+if(options->inf_func == FUNC_PISIN)
+	pih = PI *h;
+	fpisin = 0.25 * TWO_PI_SQUARE * h * h;
+
+while(term_iteration > 0)
+
+	double** matrix = arguments->Matrix[0];
+
+	//Diesen Block nur einmal am Anfang ausführen, für alle folgenden Iterationen wird er nicht mehr gebraucht
+	if(rank != 0)
+		MPI_Send(myFirstLine, toPredecessor);
+
+
+	for(i = 1; i < lines; i++)
+		
+		//Die erste Zeile wird in der ersten Iteration empfangen, da sie hier benötigt wird
+		if(i == 1 && rank != 0 && )
+			MPI_Recv(newFirstLine, fromPredecessor);
+			matrix[0] = newFirstLine;
+		
+		//Die letzte Zeile wird erst in der letzten Iteration empfangen, weil sie vorher nicht benötigt wird
+		if(i == lines - 1 && rank != lastRank)
+			MPI_Recv(newLastLine, fromSuccessor)
+			matrix[lastIndex] = newLastLine;
+
+		double fpisin_i = 0.0;
+		if(options->inf_func == FUNC_PISIN)
+			double adaptedI = rank == 0 ? (double) i : (double)(i - 1 + globalStart);
+			fpisin_i = fpisin * sin(pih * adaptedI);
+
+		for(j = 1; j < N; j++)
+			star = 0.25 * matrixEntries
+			
+			if(options->inf_func == FUNC_PISIN)
+				star += fpisin_i * sin(pih * (double) j);
+
+			if(options->termination == TERM_PREC || term_iteration == 1)
+				residuum = matrixAfterCommunication[i][j] - star;
+				residuum = abs(residuum);
+				maxresiduum = max(maxresiduum, residuum);
+
+			matrix[i][j] = star;
+
+		//Wenn die erste Zeile fertig ist, schicke sie an Vorgänger
+		if(i == 1 && rank != 0)
+			MPI_Send(matrixLineAtIndexI, toPredecessor);
+		//Wenn die letzte Zeile fertig berechnet ist, verschicke sie an Nachfolger
+		if(i == lines - 1 && rank != lastRank)
+			MPI_Send(matrixLineAtIndexI, toSuccessor);
+
+
+	results->stat_iteration++;
+	results->stat_precision = maxresiduum;
+
+	if(options->termination == TERM_PREC)
+		if(maxresiduum < options->term_precision)
+			term_iteration = 0;
+
+	else if(options->termination == TERM_ITER)
+		if(term_iteration == 1)
+			MPI_AllReduce(maxresiduum, MPI_MAX);
+		term_iteration--;
+
+results->m = 0;
