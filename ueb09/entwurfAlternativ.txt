@@ -16,19 +16,20 @@ if(options->inf_func == FUNC_PISIN)
 	pih = PI *h;
 	fpisin = 0.25 * TWO_PI_SQUARE * h * h;
 
+
+if(rank != 0)
+	MPI_Send(myFirstLine, toPredecessor);
+
+
 while(term_iteration > 0)
 
 	double** matrix = arguments->Matrix[0];
-
-	//Diesen Block nur einmal am Anfang ausführen, für alle folgenden Iterationen wird er nicht mehr gebraucht
-	if(rank != 0)
-		MPI_Send(myFirstLine, toPredecessor);
 
 
 	for(i = 1; i < lines; i++)
 		
 		//Die erste Zeile wird in der ersten Iteration empfangen, da sie hier benötigt wird
-		if(i == 1 && rank != 0 && )
+		if(i == 1 && rank != 0 )
 			MPI_Recv(newFirstLine, fromPredecessor);
 			matrix[0] = newFirstLine;
 		
@@ -68,6 +69,10 @@ while(term_iteration > 0)
 	
 	
 
+	//wenn nach Genauigkeit abgebrochen werden soll, sendet jeder Prozess nacheinander sein maxresiduum
+	//an den Verwaltungsprozess und falls das lokale maxresiduum unter der geforderten Präzision ist,
+	//wartet der betroffene Prozess, bis der Verwaltungsprozess übermittelt, ob tatsächlich abgebrochen
+	//werden soll oder nicht
 	if(options->termination == TERM_PREC)
 		MPI_Send(maxresiduum, toManagement);
 		
@@ -78,6 +83,8 @@ while(term_iteration > 0)
 				term_iteration = 0;
 				MPI_Recv(maxresiduum, reducedMaxresiduumFromManagement);
 
+	//Wenn nach Iteration abgebrochen werden soll, wird immer nur die Iterationszahl dekrementiert.
+	//In der letzten Iteration wird maxresiduum dann reduziert.
 	else if(options->termination == TERM_ITER)
 		if(term_iteration == 1)
 			MPI_Allreduce(maxresiduum, MPI_MAX);
@@ -98,7 +105,7 @@ int abort = 0;
 
 while(true)
 	
-	double maxresiduumAll = 0.0;
+	double maxresiduumOneIteration = 0.0;
 	Array processesToInformAboutAborting[world_size - 2] = 0 for every entry;
 	
 	for(int i = 0; i < world_size - 2; i++)
@@ -108,11 +115,14 @@ while(true)
 		if(newresiduum < term_precision)
 			processesToInformAboutAborting[i] = 1;
 
-		maxresiduumAll = max(newresiduum, maxresiduumAll)
+		maxresiduumOneIteration = max(newresiduum, maxresiduumAll)
 
-	maxresiduum = maxresiduumAll;
+	maxresiduum = maxresiduumOneIteration;
 	if(maxresiduum < term_precision)
 		abort = 1;
 	
 	for(every 1 in processesToInformAboutAborting)
 		MPI_Send(abort, toCorrespondingProcess);
+
+	if(abort == 1)
+		return;
