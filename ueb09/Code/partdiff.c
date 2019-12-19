@@ -251,6 +251,69 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 
 static
 void
+managePrecision(struct options const* options, struct thread_data* data)
+{
+	double term_precision = options->term_precision;
+	double maxresiduum;
+	int abort = 0;
+	int world_size = data->world_size;
+
+	while(1)
+	{
+		double maxresiduumOneIteration = 0.0;
+		int processesToInformAboutAborting[world_size];
+
+
+		for (int i = 0; i < world_size; i++)
+		{
+			double newresiduum;
+			MPI_Recv(&newresiduum, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			
+			if(newresiduum < term_precision)
+			{
+				processesToInformAboutAborting[i] = 1;
+			}
+			else
+			{
+				processesToInformAboutAborting[i] = 0;
+			}
+
+
+			if(newresiduum > maxresiduumOneIteration)
+			{
+				maxresiduumOneIteration = newresiduum;
+			}	
+		}
+
+		maxresiduum = maxresiduumOneIteration;
+
+		if(maxresiduum < term_precision)
+		{
+			abort = 1;
+		}
+
+		for(int i = 0; i < world_size; i++)
+		{
+			if(processesToInformAboutAborting[i] == 1)
+			{
+				MPI_Send(&abort, 1, MPI_INT, i, 0, MPI_COMM_WORLD); 
+			}
+		}
+
+		if(abort == 1)
+		{
+			for(int i = 0; i < world_size; i++)
+			{
+				MPI_Send(&maxresiduum, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+			}
+			MPI_Barrier(MPI_COMM_WORLD);
+			MPI_Finalize();
+		}
+	}
+}
+
+static
+void
 calculateGaussMPI (struct calculation_arguments const* arguments, struct calculation_results* results, struct options const* options, struct thread_data* data)
 {
 	int i, j;                                   /* local variables for loops */
@@ -273,8 +336,6 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 	int successor = rank + 1;
 
 	double** Matrix = arguments->Matrix[0];
-
-	//MPI_Request req;
 
 	if (options->inf_func == FUNC_FPISIN)
 	{
@@ -382,9 +443,16 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
 		{
+			MPI_Send(&maxresiduum, 1, MPI_DOUBLE, data->world_size, 0, MPI_COMM_WORLD);
 			if (maxresiduum < options->term_precision)
 			{
-				term_iteration = 0;
+				int abort;
+				MPI_Recv(&abort, 1, MPI_INT, data->world_size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				if(abort)
+				{
+					term_iteration = 0;
+					MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, data->world_size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				}
 			}
 		}
 		else if (options->termination == TERM_ITER)
@@ -922,12 +990,20 @@ main (int argc, char** argv)
 
 	askParams(&options, argc, argv, &data);
 
+	if(options.method == METH_GAUSS_SEIDEL && options.termination == TERM_PREC && world_size != 1)
+	{
+		data.world_size = data.world_size - 1;
+
+		if(rank == data.world_size)
+		{
+			managePrecision(&options, &data);
+		}
+	}
+
 
 	initVariables(&arguments, &results, &options, &data);
 	allocateMatrices(&arguments, &data);
 	initMatrices(&arguments, &options, &data);
-
-	MPI_Barrier(MPI_COMM_WORLD);
 
 	if(rank == 0)
 	{
@@ -953,8 +1029,6 @@ main (int argc, char** argv)
 		gettimeofday(&comp_time, NULL);
 		displayStatistics(&arguments, &results, &options);
 	}
-
-	MPI_Barrier(MPI_COMM_WORLD);
 
 	//wenn es nur einen Prozess gibt, kann die normale displayMatrix-Funktion genutzt werden
 	if(world_size == 1)
