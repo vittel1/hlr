@@ -249,6 +249,10 @@ initMatrices (struct calculation_arguments* arguments, struct options const* opt
 	}
 }
 
+
+/*Falls das Gauss-Seidel-Verfahren und Abbruch nach Genauigkeit gewählt wurden, übernimmt
+ * ein Prozess die Verwaltung der maxresiduums und benachrichtigt alle Prozesse, wenn die
+ * geforderte Präzision erreicht wurde.*/
 static
 void
 managePrecision(struct options const* options, struct thread_data* data)
@@ -264,6 +268,9 @@ managePrecision(struct options const* options, struct thread_data* data)
 		double maxresiduumOneIteration = 0.0;
 		int processesToInformAboutAborting[world_size];
 
+		//erhalte das maxresiduum von jedem Prozess und vergleiche mit Präzision.
+		//Falls das maxresiduum eines Prozesses unter der Grenze ist, muss er darüber
+		//informiert werden, ob alle anderen die Genauigkeit auch erreicht haben oder nicht
 		for (int i = 0; i < world_size; i++)
 		{
 			double newresiduum;
@@ -287,6 +294,8 @@ managePrecision(struct options const* options, struct thread_data* data)
 
 		maxresiduum = maxresiduumOneIteration;
 
+		//Falls alle maxresiduums unter der geforderten Genauigkeit sind, soll
+		//das Verfahren terminieren
 		if(maxresiduum < term_precision)
 		{
 			abort = 1;
@@ -300,6 +309,8 @@ managePrecision(struct options const* options, struct thread_data* data)
 			}
 		}
 
+		//Wenn das Verfahren terminieren soll, werden alle Prozesse über das globale maxresiduum
+		//informiert und danach beendet sich dieser Verwaltungsprozess
 		if(abort == 1)
 		{
 			for(int i = 0; i < world_size; i++)
@@ -351,6 +362,7 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 	double* bufNewFirstLine = malloc(sizeof(double) * (N+1)); /*Hier wird die empfangene Zeile des Vorgängers gespeichert*/
 	double* bufNewLastLine = malloc(sizeof(double) * (N+1)); /*Hier wird die empfangene Zeile des Nachfolgers gespeichert*/
 
+	//In der folgenden Matrix werden sowohl die eigenen Zeilen als auch die jeweils empfangenen gespeichert
 	int linesComplete;
 	double** matrixWithHaloLines;
 	if(rank == 0 || rank == (data->world_size - 1))
@@ -364,6 +376,8 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 		matrixWithHaloLines = malloc(sizeof(double*) * linesComplete);
 	}
 
+	//Für den Anfang soll jeder Prozess != 0 seine erste Zeile an seinen Vorgänger senden.
+	//Ebenfalls initialisiert jeder Prozess seine neue Matrix.
 	if(rank != 0)
 	{
 		double* firstLine = Matrix[0];
@@ -390,17 +404,20 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 		for (i = 1; i < (linesComplete - 1); i++)
 		{
 
+			//Falls für eine Iteration die letzte Zeile des Vorgängers benötigt wird, empfange sie hier
 			if(i == 1 && rank != 0)
 			{
 				MPI_Recv(bufNewFirstLine, N + 1, MPI_DOUBLE, predecessor, results->stat_iteration, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				matrixWithHaloLines[0] = bufNewFirstLine;
 			}
 
+			//Falls für eine Iteration die erste Zeile des Nachfolgers benötigt wird, empfange sie hier
 			if(i == (linesComplete - 2) && rank != (data->world_size - 1))
 			{
 				MPI_Recv(bufNewLastLine, N + 1, MPI_DOUBLE, successor, results->stat_iteration, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				matrixWithHaloLines[linesComplete - 1] = bufNewLastLine;
 			}
+
 			double fpisin_i = 0.0;
 
 			if (options->inf_func == FUNC_FPISIN)
@@ -431,12 +448,15 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 
 				matrixWithHaloLines[i][j] = star;
 			}
+
+			//Sobald die eigene erste Zeile fertig berechnet ist, sende sie an den Vorgänger
 			if(i == 1 && rank != 0)
 			{
 				double* sendFirstLine = matrixWithHaloLines[1];
 				MPI_Isend(sendFirstLine, N + 1, MPI_DOUBLE, predecessor, (results->stat_iteration + 1), MPI_COMM_WORLD, &req);
 			}
 
+			//Sobald die letzte eigene Zeile fertig berechnet ist, sende sie an den Nachfolger
 			if(i == (linesComplete - 2) && rank != (data->world_size - 1))
 			{
 				double* sendLastLine = matrixWithHaloLines[linesComplete - 2];
@@ -445,7 +465,9 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 		}
 
 
-		/* check for stopping calculation depending on termination method */
+		//Wenn nach Genauigkeit abgebrochen werden soll, sende erst das lokale maxresiduum an den Verwaltungsprozess.
+		//Anschließend wird, falls das lokale maxresiduum unter der geforderten Genauigkeit liegt, eine Nachricht vom
+		//Verwaltungsprozess abgewartet, ob terminiert werden soll oder nicht.
 		if (options->termination == TERM_PREC)
 		{
 			MPI_Send(&maxresiduum, 1, MPI_DOUBLE, data->world_size, results->stat_iteration, MPI_COMM_WORLD);
@@ -461,6 +483,7 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 			}
 			
 		}
+		//Beim Abbruch nach Iteration wird in der letzten Iteration das maxresiduum reduziert.
 		else if (options->termination == TERM_ITER)
 		{
 			if(term_iteration == 1)
@@ -996,8 +1019,16 @@ main (int argc, char** argv)
 
 	askParams(&options, argc, argv, &data);
 
+	//Wenn Gauss Seidel nach Präzision und mit mehr als einem Prozess berechnet werden soll,
+	//starte den Verwaltungsprozess und verringere world_size, damit Datenaufteilung noch passt
 	if(options.method == METH_GAUSS_SEIDEL && options.termination == TERM_PREC && world_size != 1)
 	{
+		if(world_size == 2 && rank == 0)
+		{
+			printf("Gauss Seidel funktioniert nur für 1 oder mehr als 2 Prozesse\n");
+			exit(1);
+		}
+
 		data.world_size = data.world_size - 1;
 
 		if(rank == data.world_size)
