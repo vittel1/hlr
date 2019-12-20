@@ -257,17 +257,17 @@ managePrecision(struct options const* options, struct thread_data* data)
 	double maxresiduum;
 	int abort = 0;
 	int world_size = data->world_size;
+	int count = 0;
 
 	while(1)
 	{
 		double maxresiduumOneIteration = 0.0;
 		int processesToInformAboutAborting[world_size];
 
-
 		for (int i = 0; i < world_size; i++)
 		{
 			double newresiduum;
-			MPI_Recv(&newresiduum, 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&newresiduum, 1, MPI_DOUBLE, i, count, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			
 			if(newresiduum < term_precision)
 			{
@@ -308,7 +308,10 @@ managePrecision(struct options const* options, struct thread_data* data)
 			}
 			MPI_Barrier(MPI_COMM_WORLD);
 			MPI_Finalize();
+			exit(0);
 		}
+
+		count++;
 	}
 }
 
@@ -323,6 +326,8 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 
 	int const N = arguments->N;
 	double const h = arguments->h;
+
+	MPI_Request req;
 
 	double pih = 0.0;
 	double fpisin = 0.0;
@@ -362,7 +367,7 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 	if(rank != 0)
 	{
 		double* firstLine = Matrix[0];
-		MPI_Send(firstLine, N + 1, MPI_DOUBLE, predecessor, 0, MPI_COMM_WORLD);
+		MPI_Isend(firstLine, N + 1, MPI_DOUBLE, predecessor, results->stat_iteration, MPI_COMM_WORLD, &req);
 		for(int x = 0; x < lines; x++)
 		{
 			matrixWithHaloLines[x + 1] = Matrix[x];
@@ -387,13 +392,13 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 
 			if(i == 1 && rank != 0)
 			{
-				MPI_Recv(bufNewFirstLine, N + 1, MPI_DOUBLE, predecessor, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(bufNewFirstLine, N + 1, MPI_DOUBLE, predecessor, results->stat_iteration, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				matrixWithHaloLines[0] = bufNewFirstLine;
 			}
 
 			if(i == (linesComplete - 2) && rank != (data->world_size - 1))
 			{
-				MPI_Recv(bufNewLastLine, N + 1, MPI_DOUBLE, successor, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(bufNewLastLine, N + 1, MPI_DOUBLE, successor, results->stat_iteration, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				matrixWithHaloLines[linesComplete - 1] = bufNewLastLine;
 			}
 			double fpisin_i = 0.0;
@@ -429,13 +434,13 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 			if(i == 1 && rank != 0)
 			{
 				double* sendFirstLine = matrixWithHaloLines[1];
-				MPI_Send(sendFirstLine, N + 1, MPI_DOUBLE, predecessor, 0, MPI_COMM_WORLD);
+				MPI_Isend(sendFirstLine, N + 1, MPI_DOUBLE, predecessor, (results->stat_iteration + 1), MPI_COMM_WORLD, &req);
 			}
 
 			if(i == (linesComplete - 2) && rank != (data->world_size - 1))
 			{
 				double* sendLastLine = matrixWithHaloLines[linesComplete - 2];
-				MPI_Send(sendLastLine, N + 1, MPI_DOUBLE, successor, 0 ,MPI_COMM_WORLD);
+				MPI_Isend(sendLastLine, N + 1, MPI_DOUBLE, successor, results->stat_iteration, MPI_COMM_WORLD, &req);
 			}
 		}
 
@@ -443,7 +448,7 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 		/* check for stopping calculation depending on termination method */
 		if (options->termination == TERM_PREC)
 		{
-			MPI_Send(&maxresiduum, 1, MPI_DOUBLE, data->world_size, 0, MPI_COMM_WORLD);
+			MPI_Send(&maxresiduum, 1, MPI_DOUBLE, data->world_size, results->stat_iteration, MPI_COMM_WORLD);
 			if (maxresiduum < options->term_precision)
 			{
 				int abort;
@@ -454,6 +459,7 @@ calculateGaussMPI (struct calculation_arguments const* arguments, struct calcula
 					MPI_Recv(&maxresiduum, 1, MPI_DOUBLE, data->world_size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				}
 			}
+			
 		}
 		else if (options->termination == TERM_ITER)
 		{
