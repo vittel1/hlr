@@ -72,6 +72,12 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 		printf("Zu viele Prozesse für zu wenig Interlines, Abbruch\n");
 		exit(1);
 	}
+
+	if(options->method == METH_GAUSS_SEIDEL && N < 2 * data->world_size && data->rank == 0)
+	{
+		printf("Zu viele Prozesse für zu wenig Interlines, Abbruch\n");
+		exit(1);
+	}
 	arguments->num_matrices = (options->method == METH_JACOBI) ? 2 : 1;
 	arguments->h = 1.0 / arguments->N;
 
@@ -98,7 +104,8 @@ initVariables (struct calculation_arguments* arguments, struct calculation_resul
 		data->globalStart = (data->numLines + 1) * rest + (data->rank - rest) * data->numLines;
 	}
 
-	data->globalEnd = data->globalStart + data->numLines - 1;
+	data->globalEnd = data->globalStart + data->numLines - 1;	
+
 }
 
 /* ************************************************************************ */
